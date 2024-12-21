@@ -54,7 +54,7 @@ private:
     void identifier();
 
 private:
-    int line{0};
+    int line{1};
     std::vector<Token> tokens;
     size_t start{0};
     size_t current{0};

@@ -5,6 +5,7 @@
 #include <scanner.hpp>
 #include <fstream>
 #include <sysexits.h>
+#include <sstream>
 
 class Lox
 {
@@ -16,6 +17,12 @@ public:
         Scanner scanner(src);
         std::vector<Token> tokens = scanner.scan_tokens();
 
+        if (had_error)
+        {
+            exit(EX_DATAERR);
+        }
+
+        // TODO
         for (auto &token : tokens)
         {
             std::cout << token.to_string() << std::endl;
@@ -34,24 +41,15 @@ public:
 
     void run_file(const std::string &path)
     {
-        std::fstream fs;
-        fs.open(path.c_str(), std::ios::in);
+        std::ifstream fs(path);
         if (!fs.is_open())
         {
             std::cout << "Could not open file" << std::endl;
         }
-        std::string src;
-        std::string line;
-        while (std::getline(fs, line))
-        {
-            src += line;
-        }
-        run(src);
 
-        if (had_error)
-        {
-            exit(EX_DATAERR);
-        }
+        std::stringstream buffer;
+        buffer << fs.rdbuf();
+        run(buffer.str());
     }
 
     static void error(int line, const std::string &message)
