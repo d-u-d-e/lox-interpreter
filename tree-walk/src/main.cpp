@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    auto expr = std::make_unique<expr::Binary>(
+    /*auto expr = std::make_unique<expr::Binary>(
         std::make_unique<expr::Unary>(
             Token(Token::TokenType::MINUS, "-", nullptr, 1),
             std::make_unique<expr::Literal>(Token::Literal{123})
@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 
     ASTVisitor visitor;
     std::cout << visitor.print(*expr) << std::endl;
-    return 0;
+    return 0;*/
 
     if (argc > 2)
     {

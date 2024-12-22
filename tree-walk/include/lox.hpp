@@ -12,22 +12,7 @@ class Lox
 public:
     Lox() = default;
 
-    void run(const std::string &src)
-    {
-        Scanner scanner(src);
-        std::vector<Token> tokens = scanner.scan_tokens();
-
-        if (had_error)
-        {
-            exit(EX_DATAERR);
-        }
-
-        // TODO
-        for (auto &token : tokens)
-        {
-            std::cout << token.to_string() << std::endl;
-        }
-    }
+    void run(const std::string &src);
 
     void run_prompt()
     {
@@ -55,6 +40,18 @@ public:
     static void error(int line, const std::string &message)
     {
         report(line, "", message);
+    }
+
+    static void error(Token token, const std::string &message)
+    {
+        if (token.get_type() == Token::TokenType::END_OF_FILE)
+        {
+            Lox::report(token.get_line(), " at end", message);
+        }
+        else
+        {
+            Lox::report(token.get_line(), " at '" + token.get_lexeme() + "'", message);
+        }
     }
 
     static void report(int line, const std::string &where, const std::string &message)

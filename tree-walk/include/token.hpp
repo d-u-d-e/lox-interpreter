@@ -74,6 +74,8 @@ public:
 
     [[nodiscard]] Literal get_literal() const { return literal; }
 
+    [[nodiscard]] int get_line() const { return line; }
+
 private:
     std::string name(TokenType type) const
     {

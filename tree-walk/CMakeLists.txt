@@ -11,6 +11,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lox.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/parser.cpp
 )
 
 target_include_directories(cpplox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
