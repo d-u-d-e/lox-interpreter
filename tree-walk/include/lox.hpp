@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sysexits.h>
 #include <sstream>
+#include <interpreter.hpp>
 
 class Lox
 {
@@ -17,10 +18,12 @@ public:
     void run_prompt()
     {
         std::string line;
+        std::cout << "> ";
         while (std::getline(std::cin, line))
         {
             run(line);
             had_error = false;
+            std::cout << "> ";
         }
     }
 
@@ -35,6 +38,16 @@ public:
         std::stringstream buffer;
         buffer << fs.rdbuf();
         run(buffer.str());
+
+        if (had_error)
+        {
+            exit(EX_DATAERR);
+        }
+
+        if (had_runtime_error)
+        {
+            exit(EX_SOFTWARE);
+        }
     }
 
     static void error(int line, const std::string &message)
@@ -60,6 +73,14 @@ public:
         had_error = true;
     }
 
+    static void runtime_error(const Interpreter::RuntimeError &error)
+    {
+        std::cerr << error.what() << std::endl
+                  << "[line " << error.token.get_line() << "]" << std::endl;
+        had_runtime_error = true;
+    }
+
 private:
+    static bool had_runtime_error;
     static bool had_error;
 };

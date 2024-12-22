@@ -12,9 +12,9 @@ namespace expr
     {
     public:
         virtual ~Visitor() = default;
-        T virtual visitBinary(const Binary &expr) = 0;
-        T virtual visitGrouping(const Grouping &expr) = 0;
-        T virtual visitLiteral(const Literal &expr) = 0;
-        T virtual visitUnary(const Unary &expr) = 0;
+        T virtual visit_binary(const Binary &expr) = 0;
+        T virtual visit_grouping(const Grouping &expr) = 0;
+        T virtual visit_literal(const Literal &expr) = 0;
+        T virtual visit_unary(const Unary &expr) = 0;
     };
 }

@@ -3,34 +3,30 @@
 class ASTVisitor : public expr::Visitor<std::string>
 {
 public:
-    std::string visitBinary(const expr::Binary &expr) override
+    std::string visit_binary(const expr::Binary &expr) override
     {
         return parenthesize(expr.token.get_lexeme(), *expr.left.get(), *expr.right.get());
     }
-    std::string visitGrouping(const expr::Grouping &expr) override
+    std::string visit_grouping(const expr::Grouping &expr) override
     {
         return parenthesize("group", *expr.expr.get());
     }
-    std::string visitLiteral(const expr::Literal &expr) override
+    std::string visit_literal(const expr::Literal &expr) override
     {
-        if (std::holds_alternative<std::string>(expr.literal))
+        if (std::holds_alternative<std::string>(expr.value))
         {
-            return std::get<std::string>(expr.literal);
+            return std::get<std::string>(expr.value);
         }
-        else if (std::holds_alternative<std::nullptr_t>(expr.literal))
+        else if (std::holds_alternative<std::nullptr_t>(expr.value))
         {
             return "nil";
         }
-        else if (std::holds_alternative<int>(expr.literal))
-        {
-            return std::to_string(std::get<int>(expr.literal));
-        }
         else
         {
-            return std::to_string(std::get<double>(expr.literal));
+            return std::to_string(std::get<double>(expr.value));
         }
     }
-    std::string visitUnary(const expr::Unary &expr) override
+    std::string visit_unary(const expr::Unary &expr) override
     {
         return parenthesize(expr.token.get_lexeme(), *expr.right.get());
     }

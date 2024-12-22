@@ -22,7 +22,7 @@ public:
         {
             return nullptr;
         }
-    }
+    }  
 
 private:
     ParseError error(Token token, const std::string &message);
