@@ -141,8 +141,12 @@ void Scanner::number()
         {
             advance();
         }
+        add_token(Token::TokenType::NUMBER, std::stod(source.substr(start, current - start)));
     }
-    add_token(Token::TokenType::NUMBER, std::stod(source.substr(start, current - start)));
+    else
+    {
+        add_token(Token::TokenType::NUMBER, std::stoi(source.substr(start, current - start)));
+    }
 }
 
 void Scanner::identifier()

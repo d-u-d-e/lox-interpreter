@@ -41,7 +41,7 @@ private:
 
     void add_token(Token::TokenType type)
     {
-        add_token(type, std::monostate());
+        add_token(type, nullptr);
     }
 
     void add_token(Token::TokenType type, Token::Literal literal)

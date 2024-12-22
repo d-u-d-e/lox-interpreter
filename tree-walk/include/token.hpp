@@ -6,7 +6,7 @@ class Token
 {
 public:
 
-    using Literal = std::variant<std::monostate, double, std::string>;
+    using Literal = std::variant<std::nullptr_t, double, int, std::string>;
 
     enum class TokenType
     {
