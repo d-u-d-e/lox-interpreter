@@ -177,6 +177,14 @@ expr::value Interpreter::visit_variable_expr(const expr::Variable &expr)
     return env.get(expr.token);
 }
 
+expr::value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
+{
+    auto value = evaluate(*expr.value);
+    env.assign(expr.token, value);
+    return value;
+}
+
+
 void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
 {
     // by default, if a variable declaration has no initializer, the value is nil

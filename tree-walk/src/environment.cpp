@@ -15,3 +15,12 @@ void Environment::define(const std::string &name, const expr::value &value)
 {
     values[name] = value;
 }
+
+void Environment::assign(const Token &name, const expr::value &value)
+{
+    if (values.find(name.get_lexeme()) != values.end()){
+        values[name.get_lexeme()] = value;
+        return;
+    }
+    throw Interpreter::RuntimeError(name, "Undefined variable '" + name.get_lexeme() + "'.");
+}

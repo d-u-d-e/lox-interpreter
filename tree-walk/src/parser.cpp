@@ -3,7 +3,7 @@
 
 std::unique_ptr<expr::ExprBase> Parser::expression()
 {
-    return equality();
+    return assignment();
 }
 
 std::unique_ptr<expr::ExprBase> Parser::equality()
@@ -94,6 +94,27 @@ std::unique_ptr<expr::ExprBase> Parser::primary()
         return std::make_unique<expr::Grouping>(std::move(expr));
     }
     throw error(peek(), "Expect expression.");
+}
+
+std::unique_ptr<expr::ExprBase> Parser::assignment()
+{
+    // trick: parse the left side as an equality expression so that we automatically stop
+    // at the first '='
+    auto expr = equality();
+
+    if (match(Token::TokenType::EQUAL))
+    {
+        auto equals = previous();
+        auto value = assignment(); // recursively parse the right side
+
+        if (typeid(*expr) == typeid(expr::Variable))
+        {
+            auto &name = dynamic_cast<expr::Variable &>(*expr);
+            return std::make_unique<expr::Assignment>(name.token, std::move(value));
+        }
+        error(equals, "Invalid assignment target.");
+    }
+    return expr;
 }
 
 Parser::ParseError Parser::error(Token token, const std::string &message)

@@ -19,6 +19,7 @@ public:
     expr::value visit_literal_expr(const expr::Literal &expr) override;
     expr::value visit_unary_expr(const expr::Unary &expr) override;
     expr::value visit_variable_expr(const expr::Variable &expr) override;
+    expr::value visit_assignment_expr(const expr::Assignment &expr) override;
 
     void visit_print_stmt(const stmt::Print &stmt) override;
     void visit_expr_stmt(const stmt::Expression &stmt) override;

@@ -78,4 +78,13 @@ namespace expr
         Token token;
     };
 
+    struct Assignment : public ExprBase
+    {
+        Assignment(const Token &token, std::unique_ptr<ExprBase> && value) : token(token), value(std::move(value)) {}
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_assignment_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_assignment_expr(*this); }
+        Token token;
+        std::unique_ptr<ExprBase> value;
+    };
+
 }

@@ -7,6 +7,7 @@ namespace expr
     class Literal;
     class Unary;
     class Variable;
+    class Assignment;
 
     template <typename T>
     class Visitor
@@ -18,6 +19,7 @@ namespace expr
         T virtual visit_literal_expr(const Literal &expr) = 0;
         T virtual visit_unary_expr(const Unary &expr) = 0;
         T virtual visit_variable_expr(const Variable &expr) = 0;
+        T virtual visit_assignment_expr(const Assignment &expr) = 0;
     };
 }
 
