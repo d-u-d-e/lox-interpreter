@@ -18,7 +18,7 @@ void Lox::run(const std::string &src)
     }
 
     Parser parser(tokens);
-    auto expr = parser.parse();
+    auto statements = parser.parse();
 
     if (had_error)
     {
@@ -26,7 +26,7 @@ void Lox::run(const std::string &src)
     }
 
     Interpreter interpreter;
-    interpreter.interpret(*expr);
+    interpreter.interpret(statements);
 
     // ASTVisitor visitor;
     // std::cout << visitor.print(*expr) << std::endl;

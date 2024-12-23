@@ -1,7 +1,7 @@
 #include <interpreter.hpp>
 #include <lox.hpp>
 
-expr::value Interpreter::visit_binary(const expr::Binary &expr)
+expr::value Interpreter::visit_binary_expr(const expr::Binary &expr)
 {
     expr::value left = evaluate(*expr.left);
     expr::value right = evaluate(*expr.right);
@@ -54,11 +54,11 @@ expr::value Interpreter::visit_binary(const expr::Binary &expr)
     // unreachable
     throw std::runtime_error("interpreter error");
 }
-expr::value Interpreter::visit_grouping(const expr::Grouping &expr)
+expr::value Interpreter::visit_grouping_expr(const expr::Grouping &expr)
 {
     return evaluate(*expr.expr);
 }
-expr::value Interpreter::visit_literal(const expr::Literal &expr)
+expr::value Interpreter::visit_literal_expr(const expr::Literal &expr)
 {
     return expr.value;
 }
@@ -102,7 +102,7 @@ bool Interpreter::is_equal(const expr::value &left, expr::value &right)
     return false;
 }
 
-expr::value Interpreter::visit_unary(const expr::Unary &expr)
+expr::value Interpreter::visit_unary_expr(const expr::Unary &expr)
 {
     expr::value right = evaluate(*expr.right);
 
@@ -160,12 +160,26 @@ std::string Interpreter::stringify(const expr::value &value)
     return "";
 }
 
-void Interpreter::interpret(const expr::ExprBase &expr)
+void Interpreter::visit_print_stmt(const stmt::Print &stmt)
+{
+    auto value = evaluate(*stmt.ex.get());
+    std::cout << stringify(value) << std::endl;
+}
+
+void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
+{
+    // discard value
+    evaluate(*stmt.ex.get());
+}
+
+void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms)
 {
     try
     {
-        auto value = evaluate(expr);
-        std::cout << stringify(value) << std::endl;
+        for (const auto &stm : stms)
+        {
+            execute(*stm);
+        }
     }
     catch (const RuntimeError &error)
     {

@@ -109,3 +109,26 @@ Token Parser::consume(Token::TokenType type, const std::string &message)
         throw error(peek(), message);
     }
 }
+
+std::unique_ptr<stmt::StmtBase> Parser::statement()
+{
+    if (match(Token::TokenType::PRINT))
+    {
+        return print_statement();
+    }
+    return expr_statement();
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::print_statement() 
+{
+    auto expr = expression();
+    consume(Token::TokenType::SEMICOLON, "Expect ';' after value.");
+    return std::make_unique<stmt::Print>(std::move(expr));
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::expr_statement() 
+{
+    auto expr = expression();
+    consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
+    return std::make_unique<stmt::Expression>(std::move(expr));
+}

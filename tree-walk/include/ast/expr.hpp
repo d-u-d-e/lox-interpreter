@@ -20,8 +20,8 @@ namespace expr
     struct Binary : public ExprBase
     {
         Binary(std::unique_ptr<ExprBase> &&left, const Token &token, std::unique_ptr<ExprBase> &&right) : left(std::move(left)), token(token), right(std::move(right)) {}
-        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_binary(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_binary(*this); }
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_binary_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_binary_expr(*this); }
         std::unique_ptr<ExprBase> left;
         Token token;
         std::unique_ptr<ExprBase> right;
@@ -30,8 +30,8 @@ namespace expr
     struct Grouping : public ExprBase
     {
         Grouping(std::unique_ptr<ExprBase> &&expr) : expr(std::move(expr)) {}
-        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_grouping(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_grouping(*this); }
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_grouping_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_grouping_expr(*this); }
         std::unique_ptr<ExprBase> expr;
     };
 
@@ -56,16 +56,16 @@ namespace expr
                 value = nullptr;
             }
         }
-        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_literal(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_literal(*this); }
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_literal_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_literal_expr(*this); }
         expr::value value;
     };
 
     struct Unary : public ExprBase
     {
         Unary(const Token &token, std::unique_ptr<ExprBase> &&right) : token(token), right(std::move(right)) {}
-        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_unary(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_unary(*this); }
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_unary_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_unary_expr(*this); }
         Token token;
         std::unique_ptr<ExprBase> right;
     };

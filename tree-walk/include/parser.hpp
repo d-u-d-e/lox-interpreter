@@ -1,7 +1,7 @@
 #pragma once
 #include <token.hpp>
 #include <vector>
-#include <ast/expr.hpp>
+#include <ast/stmt.hpp>
 
 class Parser
 {
@@ -12,16 +12,16 @@ public:
 
     Parser(const std::vector<Token> &tokens) : tokens(tokens) {}
 
-    std::unique_ptr<expr::ExprBase> parse()
+    std::vector<std::unique_ptr<stmt::StmtBase>> parse()
     {
-        try
+        std::vector<std::unique_ptr<stmt::StmtBase>> statements;
+
+        while (!is_at_end())
         {
-            return expression();
+            statements.push_back(statement());
         }
-        catch (ParseError &err)
-        {
-            return nullptr;
-        }
+
+        return statements;
     }  
 
 private:
@@ -35,6 +35,10 @@ private:
     std::unique_ptr<expr::ExprBase> factor();
     std::unique_ptr<expr::ExprBase> unary();
     std::unique_ptr<expr::ExprBase> primary();
+
+    std::unique_ptr<stmt::StmtBase> statement();
+    std::unique_ptr<stmt::StmtBase> print_statement();
+    std::unique_ptr<stmt::StmtBase> expr_statement();
 
     bool is_at_end()
     {
