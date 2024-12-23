@@ -10,7 +10,7 @@ public:
     {
     };
 
-    Parser(const std::vector<Token> &tokens) : tokens(tokens) {}
+    Parser(const std::vector<Token> &tokens, bool repl = false) : tokens(tokens), repl(repl) {}
 
     std::vector<std::unique_ptr<stmt::StmtBase>> parse()
     {
@@ -22,7 +22,7 @@ public:
         }
 
         return statements;
-    }  
+    }
 
 private:
     ParseError error(Token token, const std::string &message);
@@ -89,6 +89,7 @@ private:
     }
 
 private:
+    bool repl;
     size_t current{0};
     std::vector<Token> tokens;
 };

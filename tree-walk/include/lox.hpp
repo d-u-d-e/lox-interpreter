@@ -13,7 +13,7 @@ class Lox
 public:
     Lox() = default;
 
-    void run(const std::string &src);
+    void run(const std::string &src, bool repl);
 
     void run_prompt()
     {
@@ -21,7 +21,7 @@ public:
         std::cout << "> ";
         while (std::getline(std::cin, line))
         {
-            run(line);
+            run(line, true);
             had_error = false;
             std::cout << "> ";
         }
@@ -37,7 +37,7 @@ public:
 
         std::stringstream buffer;
         buffer << fs.rdbuf();
-        run(buffer.str());
+        run(buffer.str(), false);
 
         if (had_error)
         {

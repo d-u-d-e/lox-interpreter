@@ -141,7 +141,8 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     {
         return print_statement();
     }
-    else if (match(Token::TokenType::LEFT_BRACE)){
+    else if (match(Token::TokenType::LEFT_BRACE))
+    {
         return std::make_unique<stmt::Block>(block());
     }
     return expr_statement();
@@ -157,7 +158,10 @@ std::unique_ptr<stmt::StmtBase> Parser::print_statement()
 std::unique_ptr<stmt::StmtBase> Parser::expr_statement()
 {
     auto expr = expression();
-    consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
+    if (!repl || peek().get_type() == Token::TokenType::SEMICOLON)
+    {
+        consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
+    }
     return std::make_unique<stmt::Expression>(std::move(expr));
 }
 

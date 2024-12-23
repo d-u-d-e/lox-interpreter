@@ -168,8 +168,12 @@ void Interpreter::visit_print_stmt(const stmt::Print &stmt)
 
 void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
 {
-    // discard value
-    evaluate(*stmt.ex.get());
+    // show value only in repl
+    auto v = evaluate(*stmt.ex.get());
+    if (repl)
+    {
+        std::cout << stringify(v) << std::endl;
+    }
 }
 
 expr::value Interpreter::visit_variable_expr(const expr::Variable &expr)
@@ -204,21 +208,25 @@ void Interpreter::visit_block_stmt(const stmt::Block &stmt)
 void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
 {
     auto previous = env;
-    try {
+    try
+    {
         env = std::move(environ);
-        for (const auto &stm : stmts){
+        for (const auto &stm : stmts)
+        {
             execute(*stm);
         }
     }
-    catch (...){
+    catch (...)
+    {
         env = previous;
         throw;
     }
     env = previous;
 }
 
-void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms)
+void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms, bool repl)
 {
+    this->repl = repl;
     try
     {
         for (const auto &stm : stms)

@@ -6,7 +6,7 @@
 bool Lox::had_error{false};
 bool Lox::had_runtime_error{false};
 
-void Lox::run(const std::string &src)
+void Lox::run(const std::string &src, bool repl)
 
 {
     Scanner scanner(src);
@@ -17,7 +17,7 @@ void Lox::run(const std::string &src)
         return;
     }
 
-    Parser parser(tokens);
+    Parser parser(tokens, repl);
     auto statements = parser.parse();
 
     if (had_error)
@@ -25,7 +25,7 @@ void Lox::run(const std::string &src)
         return;
     }
 
-    interpreter.interpret(statements);
+    interpreter.interpret(statements, repl);
 
     // ASTVisitor visitor;
     // std::cout << visitor.print(*expr) << std::endl;

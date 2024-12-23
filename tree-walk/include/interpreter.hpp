@@ -32,7 +32,7 @@ public:
     void visit_vardecl_stmt(const stmt::VariableDecl &stmt) override;
     void visit_block_stmt(const stmt::Block &stmt) override;
 
-    void interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms);
+    void interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms, bool repl = false);
     static std::string stringify(const expr::value &value);
 
 private:
@@ -46,4 +46,5 @@ private:
     void execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ);
 
     std::shared_ptr<Environment> env;
+    bool repl{false};
 };
