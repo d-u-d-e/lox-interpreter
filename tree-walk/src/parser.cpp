@@ -145,6 +145,10 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     {
         return std::make_unique<stmt::Block>(block());
     }
+    else if (match(Token::TokenType::IF))
+    {
+        return if_statement();
+    }
     return expr_statement();
 }
 
@@ -208,14 +212,25 @@ std::vector<std::unique_ptr<stmt::StmtBase>> Parser::block()
     return statements;
 }
 
+std::unique_ptr<stmt::StmtBase> Parser::if_statement()
+{
+    consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
+    auto condition = expression();
+    consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+
+    auto then_stm = statement();
+    std::unique_ptr<stmt::StmtBase> else_stm = nullptr;
+    if (match(Token::TokenType::ELSE))
+    {
+        else_stm = statement();
+    }
+    return std::make_unique<stmt::If>(std::move(condition), std::move(then_stm), std::move(else_stm));
+}
+
 void Parser::synchronize()
 {
-    advance();
     while (!is_at_end())
     {
-        if (previous().get_type() == Token::TokenType::SEMICOLON)
-            return;
-
         switch (peek().get_type())
         {
         case Token::TokenType::CLASS:
@@ -228,6 +243,9 @@ void Parser::synchronize()
         case Token::TokenType::RETURN:
             return;
         }
+
         advance();
+        if (previous().get_type() == Token::TokenType::SEMICOLON)
+            return;
     }
 }

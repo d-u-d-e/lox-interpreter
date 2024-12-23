@@ -56,4 +56,17 @@ namespace stmt
         }
         std::vector<std::unique_ptr<stmt::StmtBase>> statements;
     };
+
+    struct If : public StmtBase
+    {
+        If(std::unique_ptr<expr::ExprBase> &&condition, std::unique_ptr<stmt::StmtBase> &&then_stm, std::unique_ptr<stmt::StmtBase> &&else_stm) : condition(std::move(condition)), then_stm(std::move(then_stm)), else_stm(std::move(else_stm)) {}
+        void accept(Visitor<void> &visitor) const override
+        {
+            visitor.visit_if_stmt(*this);
+        }
+        std::unique_ptr<expr::ExprBase> condition;
+        std::unique_ptr<stmt::StmtBase> then_stm;
+        std::unique_ptr<stmt::StmtBase> else_stm;
+    };
+
 }

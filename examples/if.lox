@@ -1,0 +1,10 @@
+var a = "yes";
+if (a)
+print a;
+else
+print "no"
+
+if (3 == 4)
+print "3==4";
+else 
+    print "3!=4";

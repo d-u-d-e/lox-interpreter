@@ -205,6 +205,18 @@ void Interpreter::visit_block_stmt(const stmt::Block &stmt)
     execute_block(stmt.statements, std::make_unique<Environment>(env));
 }
 
+void Interpreter::visit_if_stmt(const stmt::If &stmt)
+{
+    if (is_truthy(evaluate(*stmt.condition)))
+    {
+        execute(*stmt.then_stm);
+    }
+    else if (stmt.else_stm != nullptr)
+    {
+        execute(*stmt.else_stm);
+    }
+}
+
 void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
 {
     auto previous = env;
