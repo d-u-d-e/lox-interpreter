@@ -28,6 +28,7 @@ namespace stmt
     class Print;
     class Expression;
     class VariableDecl;
+    class Block;
 
     template <typename T>
     class Visitor
@@ -37,5 +38,6 @@ namespace stmt
         T virtual visit_print_stmt(const Print &stmt) = 0;
         T virtual visit_expr_stmt(const Expression &stmt) = 0;
         T virtual visit_vardecl_stmt(const VariableDecl &stmt) = 0;
+        T virtual visit_block_stmt(const Block &stmt) = 0;
     };
 }

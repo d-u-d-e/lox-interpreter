@@ -8,6 +8,11 @@ expr::value Environment::get(const Token &name) const
     {
         return it->second;
     }
+
+    if (enclosing != nullptr){
+        return enclosing->get(name);
+    }
+
     throw Interpreter::RuntimeError(name, "Undefined variable '" + name.get_lexeme() + "'.");
 }
 
@@ -22,5 +27,11 @@ void Environment::assign(const Token &name, const expr::value &value)
         values[name.get_lexeme()] = value;
         return;
     }
+
+    if (enclosing != nullptr){
+        enclosing->assign(name, value);
+        return;
+    }
+
     throw Interpreter::RuntimeError(name, "Undefined variable '" + name.get_lexeme() + "'.");
 }

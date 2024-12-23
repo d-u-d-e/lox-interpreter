@@ -174,16 +174,15 @@ void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
 
 expr::value Interpreter::visit_variable_expr(const expr::Variable &expr)
 {
-    return env.get(expr.token);
+    return env.get()->get(expr.token);
 }
 
 expr::value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
 {
     auto value = evaluate(*expr.value);
-    env.assign(expr.token, value);
+    env.get()->assign(expr.token, value);
     return value;
 }
-
 
 void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
 {
@@ -194,7 +193,28 @@ void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
         value = evaluate(*stmt.initializer);
     }
 
-    env.define(stmt.token.get_lexeme(), value);
+    env.get()->define(stmt.token.get_lexeme(), value);
+}
+
+void Interpreter::visit_block_stmt(const stmt::Block &stmt)
+{
+    execute_block(stmt.statements, std::make_unique<Environment>(env));
+}
+
+void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
+{
+    auto previous = env;
+    try {
+        env = std::move(environ);
+        for (const auto &stm : stmts){
+            execute(*stm);
+        }
+    }
+    catch (...){
+        env = previous;
+        throw;
+    }
+    env = previous;
 }
 
 void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms)

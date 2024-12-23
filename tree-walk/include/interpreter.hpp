@@ -9,6 +9,12 @@ class Interpreter : public expr::Visitor<expr::value>,
                     public stmt::Visitor<void>
 {
 public:
+    Interpreter()
+    {
+        // global env
+        env = std::make_shared<Environment>();
+    }
+
     struct RuntimeError : public std::runtime_error
     {
         RuntimeError(const Token &token, const std::string &message) : std::runtime_error(message), token(token) {}
@@ -24,6 +30,7 @@ public:
     void visit_print_stmt(const stmt::Print &stmt) override;
     void visit_expr_stmt(const stmt::Expression &stmt) override;
     void visit_vardecl_stmt(const stmt::VariableDecl &stmt) override;
+    void visit_block_stmt(const stmt::Block &stmt) override;
 
     void interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms);
     static std::string stringify(const expr::value &value);
@@ -36,6 +43,7 @@ private:
     bool is_equal(const expr::value &left, expr::value &right);
     expr::value evaluate(const expr::ExprBase &expr) { return expr.accept(*this); }
     void execute(const stmt::StmtBase &stmt) { return stmt.accept(*this); }
+    void execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ);
 
-    Environment env;
+    std::shared_ptr<Environment> env;
 };

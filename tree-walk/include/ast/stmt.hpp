@@ -2,6 +2,7 @@
 
 #include <visitor.hpp>
 #include <ast/expr.hpp>
+#include <vector>
 
 namespace stmt
 {
@@ -44,5 +45,15 @@ namespace stmt
             visitor.visit_print_stmt(*this);
         }
         std::unique_ptr<expr::ExprBase> ex;
+    };
+
+    struct Block : public StmtBase
+    {
+        Block(std::vector<std::unique_ptr<StmtBase>> &&statements) : statements(std::move(statements)) {}
+        void accept(Visitor<void> &visitor) const override
+        {
+            visitor.visit_block_stmt(*this);
+        }
+        std::vector<std::unique_ptr<stmt::StmtBase>> statements;
     };
 }

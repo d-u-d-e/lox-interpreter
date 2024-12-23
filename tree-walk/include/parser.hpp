@@ -43,6 +43,7 @@ private:
     std::unique_ptr<stmt::StmtBase> expr_statement();
     std::unique_ptr<stmt::StmtBase> declaration();
     std::unique_ptr<stmt::StmtBase> var_declaration();
+    std::vector<std::unique_ptr<stmt::StmtBase>> block();
 
     bool is_at_end()
     {
