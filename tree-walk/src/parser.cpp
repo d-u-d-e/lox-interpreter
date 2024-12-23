@@ -83,6 +83,10 @@ std::unique_ptr<expr::ExprBase> Parser::primary()
     {
         return std::make_unique<expr::Literal>(previous().get_literal());
     }
+    else if (match(Token::TokenType::IDENTIFIER))
+    {
+        return std::make_unique<expr::Variable>(previous());
+    }
     else if (match(Token::TokenType::LEFT_PAREN))
     {
         auto expr = expression();
@@ -119,16 +123,72 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     return expr_statement();
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::print_statement() 
+std::unique_ptr<stmt::StmtBase> Parser::print_statement()
 {
     auto expr = expression();
     consume(Token::TokenType::SEMICOLON, "Expect ';' after value.");
     return std::make_unique<stmt::Print>(std::move(expr));
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::expr_statement() 
+std::unique_ptr<stmt::StmtBase> Parser::expr_statement()
 {
     auto expr = expression();
     consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
     return std::make_unique<stmt::Expression>(std::move(expr));
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::declaration()
+{
+    try
+    {
+        if (match(Token::TokenType::VAR))
+        {
+            return var_declaration();
+        }
+        return statement();
+    }
+    catch (const ParseError &)
+    {
+        synchronize();
+        return nullptr;
+    }
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::var_declaration()
+{
+
+    Token name = consume(Token::TokenType::IDENTIFIER, "Expect variable name.");
+    std::unique_ptr<expr::ExprBase> initializer{};
+
+    if (match(Token::TokenType::EQUAL))
+    {
+        initializer = expression();
+    }
+
+    consume(Token::TokenType::SEMICOLON, "Expect ';' after variable declaration.");
+    return std::make_unique<stmt::VariableDecl>(name, std::move(initializer));
+}
+
+void Parser::synchronize()
+{
+    advance();
+    while (!is_at_end())
+    {
+        if (previous().get_type() == Token::TokenType::SEMICOLON)
+            return;
+
+        switch (peek().get_type())
+        {
+        case Token::TokenType::CLASS:
+        case Token::TokenType::FUN:
+        case Token::TokenType::VAR:
+        case Token::TokenType::FOR:
+        case Token::TokenType::IF:
+        case Token::TokenType::WHILE:
+        case Token::TokenType::PRINT:
+        case Token::TokenType::RETURN:
+            return;
+        }
+        advance();
+    }
 }

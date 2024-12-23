@@ -18,7 +18,7 @@ public:
 
         while (!is_at_end())
         {
-            statements.push_back(statement());
+            statements.push_back(declaration());
         }
 
         return statements;
@@ -27,6 +27,7 @@ public:
 private:
     ParseError error(Token token, const std::string &message);
     Token consume(Token::TokenType type, const std::string &message);
+    void synchronize();
 
     std::unique_ptr<expr::ExprBase> expression();
     std::unique_ptr<expr::ExprBase> equality();
@@ -39,6 +40,8 @@ private:
     std::unique_ptr<stmt::StmtBase> statement();
     std::unique_ptr<stmt::StmtBase> print_statement();
     std::unique_ptr<stmt::StmtBase> expr_statement();
+    std::unique_ptr<stmt::StmtBase> declaration();
+    std::unique_ptr<stmt::StmtBase> var_declaration();
 
     bool is_at_end()
     {

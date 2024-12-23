@@ -172,6 +172,23 @@ void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
     evaluate(*stmt.ex.get());
 }
 
+expr::value Interpreter::visit_variable_expr(const expr::Variable &expr)
+{
+    return env.get(expr.token);
+}
+
+void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
+{
+    // by default, if a variable declaration has no initializer, the value is nil
+    expr::value value{nullptr};
+    if (stmt.initializer != nullptr)
+    {
+        value = evaluate(*stmt.initializer);
+    }
+
+    env.define(stmt.token.get_lexeme(), value);
+}
+
 void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms)
 {
     try

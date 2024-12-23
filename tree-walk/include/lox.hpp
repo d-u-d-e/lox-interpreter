@@ -81,6 +81,7 @@ public:
     }
 
 private:
+    Interpreter interpreter;
     static bool had_runtime_error;
     static bool had_error;
 };

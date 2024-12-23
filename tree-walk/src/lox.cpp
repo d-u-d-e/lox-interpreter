@@ -25,7 +25,6 @@ void Lox::run(const std::string &src)
         return;
     }
 
-    Interpreter interpreter;
     interpreter.interpret(statements);
 
     // ASTVisitor visitor;

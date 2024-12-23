@@ -7,7 +7,7 @@
 namespace expr
 {
 
-    using value = std::variant<std::string, int, double, std::nullptr_t, bool>;
+    using value = std::variant<std::string, double, std::nullptr_t, bool>;
 
     class ExprBase
     {
@@ -69,4 +69,13 @@ namespace expr
         Token token;
         std::unique_ptr<ExprBase> right;
     };
+
+    struct Variable : public ExprBase
+    {
+        Variable(const Token &token) : token(token) {}
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_variable_expr(*this); }
+        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_variable_expr(*this); }
+        Token token;
+    };
+
 }

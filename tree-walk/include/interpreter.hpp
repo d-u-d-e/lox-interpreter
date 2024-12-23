@@ -3,6 +3,7 @@
 #include <ast/stmt.hpp>
 #include <iostream>
 #include <vector>
+#include <environment.hpp>
 
 class Interpreter : public expr::Visitor<expr::value>,
                     public stmt::Visitor<void>
@@ -17,15 +18,16 @@ public:
     expr::value visit_grouping_expr(const expr::Grouping &expr) override;
     expr::value visit_literal_expr(const expr::Literal &expr) override;
     expr::value visit_unary_expr(const expr::Unary &expr) override;
+    expr::value visit_variable_expr(const expr::Variable &expr) override;
 
     void visit_print_stmt(const stmt::Print &stmt) override;
     void visit_expr_stmt(const stmt::Expression &stmt) override;
+    void visit_vardecl_stmt(const stmt::VariableDecl &stmt) override;
 
     void interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms);
+    static std::string stringify(const expr::value &value);
 
 private:
-    std::string stringify(const expr::value &value);
-
     void check_number_operand(const Token &op, const expr::value &operand);
     void check_number_operands(const Token &op, const expr::value &left, const expr::value &right);
 
@@ -33,4 +35,6 @@ private:
     bool is_equal(const expr::value &left, expr::value &right);
     expr::value evaluate(const expr::ExprBase &expr) { return expr.accept(*this); }
     void execute(const stmt::StmtBase &stmt) { return stmt.accept(*this); }
+
+    Environment env;
 };

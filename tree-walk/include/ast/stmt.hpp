@@ -25,6 +25,17 @@ namespace stmt
         std::unique_ptr<expr::ExprBase> ex;
     };
 
+    struct VariableDecl : public StmtBase
+    {
+        VariableDecl(const Token &token, std::unique_ptr<expr::ExprBase> &&initializer) : token(token), initializer(std::move(initializer)) {}
+        void accept(Visitor<void> &visitor) const override
+        {
+            visitor.visit_vardecl_stmt(*this);
+        }
+        Token token;
+        std::unique_ptr<expr::ExprBase> initializer;
+    };
+
     struct Print : public StmtBase
     {
         Print(std::unique_ptr<expr::ExprBase> &&ex) : ex(std::move(ex)) {}
