@@ -37,6 +37,8 @@ private:
     std::unique_ptr<expr::ExprBase> unary();
     std::unique_ptr<expr::ExprBase> primary();
     std::unique_ptr<expr::ExprBase> assignment();
+    std::unique_ptr<expr::ExprBase> logical_or();
+    std::unique_ptr<expr::ExprBase> logical_and();
 
     std::unique_ptr<stmt::StmtBase> statement();
     std::unique_ptr<stmt::StmtBase> print_statement();

@@ -6,18 +6,18 @@ expr::value Interpreter::visit_binary_expr(const expr::Binary &expr)
     expr::value left = evaluate(*expr.left);
     expr::value right = evaluate(*expr.right);
 
-    switch (expr.token.get_type())
+    switch (expr.op.get_type())
     {
     case Token::TokenType::MINUS:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) - std::get<double>(right);
 
     case Token::TokenType::STAR:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) * std::get<double>(right);
 
     case Token::TokenType::SLASH:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) / std::get<double>(right);
 
     case Token::TokenType::PLUS:
@@ -30,18 +30,18 @@ expr::value Interpreter::visit_binary_expr(const expr::Binary &expr)
             return std::get<std::string>(left) + std::get<std::string>(right);
         }
 
-        throw RuntimeError(expr.token, "Operands must be two numbers or two strings.");
+        throw RuntimeError(expr.op, "Operands must be two numbers or two strings.");
 
     case Token::TokenType::GREATER:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) > std::get<double>(right);
 
     case Token::TokenType::GREATER_EQUAL:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) >= std::get<double>(right);
 
     case Token::TokenType::LESS:
-        check_number_operands(expr.token, left, right);
+        check_number_operands(expr.op, left, right);
         return std::get<double>(left) < std::get<double>(right);
 
     case Token::TokenType::EQUAL_EQUAL:
@@ -106,10 +106,10 @@ expr::value Interpreter::visit_unary_expr(const expr::Unary &expr)
 {
     expr::value right = evaluate(*expr.right);
 
-    switch (expr.token.get_type())
+    switch (expr.op.get_type())
     {
     case Token::TokenType::MINUS:
-        check_number_operand(expr.token, right);
+        check_number_operand(expr.op, right);
         return -std::get<double>(right);
 
     case Token::TokenType::BANG:
@@ -186,6 +186,27 @@ expr::value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
     auto value = evaluate(*expr.value);
     env.get()->assign(expr.token, value);
     return value;
+}
+
+expr::value Interpreter::visit_logical_expr(const expr::Logical &expr)
+{
+    auto left = evaluate(*expr.left);
+    if (expr.op.get_type() == Token::TokenType::OR)
+    {
+        if (is_truthy(left))
+        {
+            return left;
+        }
+    }
+    else
+    {
+        // AND
+        if (!is_truthy(left))
+        {
+            return left;
+        }
+    }
+    return evaluate(*expr.right);
 }
 
 void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)

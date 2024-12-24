@@ -98,9 +98,9 @@ std::unique_ptr<expr::ExprBase> Parser::primary()
 
 std::unique_ptr<expr::ExprBase> Parser::assignment()
 {
-    // trick: parse the left side as an equality expression so that we automatically stop
+    // trick: parse the left side as a single expression so that we automatically stop
     // at the first '='
-    auto expr = equality();
+    auto expr = logical_or();
 
     if (match(Token::TokenType::EQUAL))
     {
@@ -113,6 +113,29 @@ std::unique_ptr<expr::ExprBase> Parser::assignment()
             return std::make_unique<expr::Assignment>(name.token, std::move(value));
         }
         error(equals, "Invalid assignment target.");
+    }
+    return expr;
+}
+
+std::unique_ptr<expr::ExprBase> Parser::logical_or()
+{
+    auto expr = logical_and();
+    while (match(Token::TokenType::OR))
+    {
+        auto op = previous();
+        auto right = logical_and();
+        expr = std::make_unique<expr::Logical>(std::move(expr), op, std::move(right));
+    }
+    return expr;
+}
+std::unique_ptr<expr::ExprBase> Parser::logical_and()
+{ 
+    auto expr = equality();
+    while (match(Token::TokenType::AND))
+    {
+        auto op = previous();
+        auto right = equality();
+        expr = std::make_unique<expr::Logical>(std::move(expr), op, std::move(right));
     }
     return expr;
 }

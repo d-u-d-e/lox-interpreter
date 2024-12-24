@@ -5,7 +5,7 @@ class ASTVisitor : public expr::Visitor<std::string>
 public:
     std::string visit_binary_expr(const expr::Binary &expr) override
     {
-        return parenthesize(expr.token.get_lexeme(), *expr.left.get(), *expr.right.get());
+        return parenthesize(expr.op.get_lexeme(), *expr.left.get(), *expr.right.get());
     }
     std::string visit_grouping_expr(const expr::Grouping &expr) override
     {
@@ -28,7 +28,7 @@ public:
     }
     std::string visit_unary_expr(const expr::Unary &expr) override
     {
-        return parenthesize(expr.token.get_lexeme(), *expr.right.get());
+        return parenthesize(expr.op.get_lexeme(), *expr.right.get());
     }
 
     std::string print(const expr::ExprBase &expr)
