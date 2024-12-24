@@ -33,6 +33,7 @@ public:
     void visit_vardecl_stmt(const stmt::VariableDecl &stmt) override;
     void visit_block_stmt(const stmt::Block &stmt) override;
     void visit_if_stmt(const stmt::If &stmt) override;
+    void visit_while_stmt(const stmt::While &stmt) override;
 
     void interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms, bool repl = false);
     static std::string stringify(const expr::value &value);

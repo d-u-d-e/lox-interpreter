@@ -129,7 +129,7 @@ std::unique_ptr<expr::ExprBase> Parser::logical_or()
     return expr;
 }
 std::unique_ptr<expr::ExprBase> Parser::logical_and()
-{ 
+{
     auto expr = equality();
     while (match(Token::TokenType::AND))
     {
@@ -164,8 +164,15 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     {
         return print_statement();
     }
+    else if (match(Token::TokenType::WHILE))
+    {
+        return while_statement();
+    }
     else if (match(Token::TokenType::LEFT_BRACE))
     {
+        // why not just block()?
+        // because block() is used to parse function blocks and we don't want the result to
+        // be embedded in a stmt::Block
         return std::make_unique<stmt::Block>(block());
     }
     else if (match(Token::TokenType::IF))
@@ -248,6 +255,15 @@ std::unique_ptr<stmt::StmtBase> Parser::if_statement()
         else_stm = statement();
     }
     return std::make_unique<stmt::If>(std::move(condition), std::move(then_stm), std::move(else_stm));
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::while_statement()
+{
+    consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
+    auto condition = expression();
+    consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after condition.");
+    auto body = statement();
+    return std::make_unique<stmt::While>(std::move(condition), std::move(body));
 }
 
 void Parser::synchronize()

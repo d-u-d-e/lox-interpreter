@@ -32,6 +32,7 @@ namespace stmt
     class VariableDecl;
     class Block;
     class If;
+    class While;
 
     template <typename T>
     class Visitor
@@ -43,5 +44,6 @@ namespace stmt
         T virtual visit_vardecl_stmt(const VariableDecl &stmt) = 0;
         T virtual visit_block_stmt(const Block &stmt) = 0;
         T virtual visit_if_stmt(const If &stmt) = 0;
+        T virtual visit_while_stmt(const While &stmt) = 0;
     };
 }

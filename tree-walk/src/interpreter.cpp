@@ -238,6 +238,14 @@ void Interpreter::visit_if_stmt(const stmt::If &stmt)
     }
 }
 
+void Interpreter::visit_while_stmt(const stmt::While &stmt)
+{
+    while (is_truthy(evaluate(*stmt.condition)))
+    {
+        execute(*stmt.body);
+    }
+}
+
 void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
 {
     auto previous = env;
