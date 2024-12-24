@@ -48,6 +48,7 @@ private:
     std::vector<std::unique_ptr<stmt::StmtBase>> block();
     std::unique_ptr<stmt::StmtBase> if_statement();
     std::unique_ptr<stmt::StmtBase> while_statement();
+    std::unique_ptr<stmt::StmtBase> for_statement();
 
     bool is_at_end()
     {

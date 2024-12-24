@@ -168,6 +168,10 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     {
         return while_statement();
     }
+    else if (match(Token::TokenType::FOR))
+    {
+        return for_statement();
+    }
     else if (match(Token::TokenType::LEFT_BRACE))
     {
         // why not just block()?
@@ -264,6 +268,65 @@ std::unique_ptr<stmt::StmtBase> Parser::while_statement()
     consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after condition.");
     auto body = statement();
     return std::make_unique<stmt::While>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<stmt::StmtBase> Parser::for_statement()
+{
+    consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
+    std::unique_ptr<stmt::StmtBase> initializer;
+    if (match(Token::TokenType::SEMICOLON))
+    {
+        initializer = nullptr;
+    }
+    else if (match(Token::TokenType::VAR))
+    {
+        initializer = var_declaration();
+    }
+    else
+    {
+        initializer = expr_statement();
+    }
+    // first ; parsed
+    std::unique_ptr<expr::ExprBase> condition = nullptr;
+    if (!check(Token::TokenType::SEMICOLON))
+    {
+        condition = expression();
+    }
+    consume(Token::TokenType::SEMICOLON, "Expect ';' after loop condition.");
+
+    std::unique_ptr<expr::ExprBase> increment = nullptr;
+    if (!check(Token::TokenType::RIGHT_PAREN))
+    {
+        increment = expression();
+    }
+    consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after for clauses.");
+
+    auto body = statement();
+
+    // desugaring the for loop into a while loop
+
+    if (increment)
+    {
+        auto statements = std::vector<std::unique_ptr<stmt::StmtBase>>();
+        statements.emplace_back(std::move(body));
+        // TODO: in repl this gets printed
+        statements.push_back(std::make_unique<stmt::Expression>(std::move(increment)));
+        body = std::make_unique<stmt::Block>(std::move(statements));
+    }
+    if (!condition)
+    {
+        condition = std::make_unique<expr::Literal>(Token::Literal{true});
+    }
+    body = std::make_unique<stmt::While>(std::move(condition), std::move(body));
+
+    if (initializer)
+    {
+        auto statements = std::vector<std::unique_ptr<stmt::StmtBase>>();
+        statements.emplace_back(std::move(initializer));
+        statements.emplace_back(std::move(body));
+        body = std::make_unique<stmt::Block>(std::move(statements));
+    }
+    return body;
 }
 
 void Parser::synchronize()
