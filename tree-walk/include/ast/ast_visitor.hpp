@@ -17,13 +17,13 @@ public:
         {
             return std::get<std::string>(expr.value);
         }
-        else if (std::holds_alternative<std::nullptr_t>(expr.value))
+        else if (std::holds_alternative<double>(expr.value))
         {
-            return "nil";
+            return std::to_string(std::get<double>(expr.value));
         }
         else
         {
-            return std::to_string(std::get<double>(expr.value));
+            return "nil";
         }
     }
     std::string visit_unary_expr(const expr::Unary &expr) override

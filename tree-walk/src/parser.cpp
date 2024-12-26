@@ -77,7 +77,7 @@ std::unique_ptr<expr::ExprBase> Parser::primary()
     }
     else if (match(Token::TokenType::NIL))
     {
-        return std::make_unique<expr::Literal>(Token::Literal{nullptr});
+        return std::make_unique<expr::Literal>(Token::Literal{});
     }
     else if (match(Token::TokenType::NUMBER, Token::TokenType::STRING))
     {

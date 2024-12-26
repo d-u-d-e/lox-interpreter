@@ -65,8 +65,9 @@ expr::value Interpreter::visit_literal_expr(const expr::Literal &expr)
 
 bool Interpreter::is_truthy(const expr::value &value)
 {
-    if (std::holds_alternative<std::nullptr_t>(value))
+    if (std::holds_alternative<std::monostate>(value))
     {
+        // nil
         return false;
     }
     else if (std::holds_alternative<bool>(value))
@@ -78,11 +79,11 @@ bool Interpreter::is_truthy(const expr::value &value)
 
 bool Interpreter::is_equal(const expr::value &left, expr::value &right)
 {
-    if (std::holds_alternative<std::nullptr_t>(left) && std::holds_alternative<std::nullptr_t>(right))
+    if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right))
     {
         return true;
     }
-    else if (std::holds_alternative<std::nullptr_t>(left))
+    else if (std::holds_alternative<std::monostate>(left))
     {
         return false;
     }
@@ -141,7 +142,7 @@ void Interpreter::check_number_operands(const Token &op, const expr::value &left
 
 std::string Interpreter::stringify(const expr::value &value)
 {
-    if (std::holds_alternative<std::nullptr_t>(value))
+    if (std::holds_alternative<std::monostate>(value))
     {
         return "nil";
     }
@@ -212,7 +213,7 @@ expr::value Interpreter::visit_logical_expr(const expr::Logical &expr)
 void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
 {
     // by default, if a variable declaration has no initializer, the value is nil
-    expr::value value{nullptr};
+    expr::value value{};
     if (stmt.initializer != nullptr)
     {
         value = evaluate(*stmt.initializer);

@@ -7,7 +7,7 @@
 namespace expr
 {
 
-    using value = std::variant<std::string, double, std::nullptr_t, bool>;
+    using value = std::variant<std::monostate, std::string, double, bool>;
 
     class ExprBase
     {
@@ -53,7 +53,7 @@ namespace expr
             }
             else
             {
-                value = nullptr;
+                value = std::monostate();
             }
         }
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_literal_expr(*this); }
