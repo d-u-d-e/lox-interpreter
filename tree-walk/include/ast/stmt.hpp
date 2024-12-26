@@ -3,6 +3,7 @@
 #include <visitor.hpp>
 #include <ast/expr.hpp>
 #include <vector>
+#include <memory>
 
 namespace stmt
 {
@@ -11,73 +12,85 @@ namespace stmt
     {
     public:
         virtual ~StmtBase() = default;
-        virtual void accept(Visitor<void> &visitor) const = 0;
+        virtual void accept(Visitor<void> &visitor) = 0;
     };
 
     // This is an expression statement,
     // i.e. an expression followed by a semicolon
     struct Expression : public StmtBase
     {
-        Expression(std::unique_ptr<expr::ExprBase> &&ex) : ex(std::move(ex)) {}
-        void accept(Visitor<void> &visitor) const override
+        Expression(std::shared_ptr<expr::ExprBase> ex) : ex(ex) {}
+        void accept(Visitor<void> &visitor) override
         {
             visitor.visit_expr_stmt(*this);
         }
-        std::unique_ptr<expr::ExprBase> ex;
+        std::shared_ptr<expr::ExprBase> ex;
     };
 
     struct VariableDecl : public StmtBase
     {
-        VariableDecl(const Token &token, std::unique_ptr<expr::ExprBase> &&initializer) : token(token), initializer(std::move(initializer)) {}
-        void accept(Visitor<void> &visitor) const override
+        VariableDecl(const Token &token, std::shared_ptr<expr::ExprBase> &&initializer) : token(token), initializer(initializer) {}
+        void accept(Visitor<void> &visitor) override
         {
             visitor.visit_vardecl_stmt(*this);
         }
         Token token;
-        std::unique_ptr<expr::ExprBase> initializer;
+        std::shared_ptr<expr::ExprBase> initializer;
     };
 
     struct Print : public StmtBase
     {
-        Print(std::unique_ptr<expr::ExprBase> &&ex) : ex(std::move(ex)) {}
-        void accept(Visitor<void> &visitor) const override
+        Print(std::shared_ptr<expr::ExprBase> ex) : ex(ex) {}
+        void accept(Visitor<void> &visitor) override
         {
             visitor.visit_print_stmt(*this);
         }
-        std::unique_ptr<expr::ExprBase> ex;
+        std::shared_ptr<expr::ExprBase> ex;
     };
 
     struct Block : public StmtBase
     {
-        Block(std::vector<std::unique_ptr<StmtBase>> &&statements) : statements(std::move(statements)) {}
-        void accept(Visitor<void> &visitor) const override
+        Block(std::vector<std::shared_ptr<StmtBase>> statements) : statements(statements) {}
+        void accept(Visitor<void> &visitor) override
         {
             visitor.visit_block_stmt(*this);
         }
-        std::vector<std::unique_ptr<stmt::StmtBase>> statements;
+        std::vector<std::shared_ptr<stmt::StmtBase>> statements;
     };
 
     struct If : public StmtBase
     {
-        If(std::unique_ptr<expr::ExprBase> &&condition, std::unique_ptr<stmt::StmtBase> &&then_stm, std::unique_ptr<stmt::StmtBase> &&else_stm) : condition(std::move(condition)), then_stm(std::move(then_stm)), else_stm(std::move(else_stm)) {}
-        void accept(Visitor<void> &visitor) const override
+        If(std::shared_ptr<expr::ExprBase> condition, std::shared_ptr<stmt::StmtBase> then_stm, std::shared_ptr<stmt::StmtBase> else_stm) : condition(condition), then_stm(then_stm), else_stm(else_stm) {}
+        void accept(Visitor<void> &visitor) override
         {
             visitor.visit_if_stmt(*this);
         }
-        std::unique_ptr<expr::ExprBase> condition;
-        std::unique_ptr<stmt::StmtBase> then_stm;
-        std::unique_ptr<stmt::StmtBase> else_stm;
+        std::shared_ptr<expr::ExprBase> condition;
+        std::shared_ptr<stmt::StmtBase> then_stm;
+        std::shared_ptr<stmt::StmtBase> else_stm;
     };
 
-    struct While : public StmtBase
+    struct While : public StmtBase, public std::enable_shared_from_this<While>
     {
-        While(std::unique_ptr<expr::ExprBase> &&condition, std::unique_ptr<stmt::StmtBase> &&body) : condition(std::move(condition)), body(std::move(body)) {}
-        void accept(Visitor<void> &visitor) const override
+        While(std::shared_ptr<expr::ExprBase> &&condition, std::shared_ptr<stmt::StmtBase> &&body) : condition(condition), body(body) {}
+        void accept(Visitor<void> &visitor) override
         {
-            visitor.visit_while_stmt(*this);
+            visitor.visit_while_stmt(shared_from_this());
         }
-        std::unique_ptr<expr::ExprBase> condition;
-        std::unique_ptr<stmt::StmtBase> body;
+        std::shared_ptr<expr::ExprBase> condition;
+        std::shared_ptr<stmt::StmtBase> body;
+    };
+
+    struct Function : public StmtBase, public std::enable_shared_from_this<Function>
+    {
+        Function(const Token &name, const std::vector<Token> &params, std::vector<std::shared_ptr<stmt::StmtBase>> body) : name(name), params(params), body(body) {}
+        void accept(Visitor<void> &visitor) override
+        {
+            visitor.visit_fun_stmt(shared_from_this());
+        }
+        Token name;
+        std::vector<Token> params;
+        std::vector<std::shared_ptr<stmt::StmtBase>> body;
     };
 
 }

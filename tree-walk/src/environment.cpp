@@ -1,7 +1,7 @@
 #include <environment.hpp>
 #include <interpreter.hpp>
 
-expr::value Environment::get(const Token &name) const
+expr::Value Environment::get(const Token &name) const
 {
     auto it = values.find(name.get_lexeme());
     if (it != values.end())
@@ -16,12 +16,12 @@ expr::value Environment::get(const Token &name) const
     throw Interpreter::RuntimeError(name, "Undefined variable '" + name.get_lexeme() + "'.");
 }
 
-void Environment::define(const std::string &name, const expr::value &value)
+void Environment::define(const std::string &name, const expr::Value &value)
 {
     values[name] = value;
 }
 
-void Environment::assign(const Token &name, const expr::value &value)
+void Environment::assign(const Token &name, const expr::Value &value)
 {
     if (values.find(name.get_lexeme()) != values.end()){
         values[name.get_lexeme()] = value;

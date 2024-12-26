@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 namespace expr
 {
@@ -9,6 +10,7 @@ namespace expr
     class Variable;
     class Assignment;
     class Logical;
+    class Call;
 
     template <typename T>
     class Visitor
@@ -22,6 +24,7 @@ namespace expr
         T virtual visit_variable_expr(const Variable &expr) = 0;
         T virtual visit_assignment_expr(const Assignment &expr) = 0;
         T virtual visit_logical_expr(const Logical &expr) = 0;
+        T virtual visit_call_expr(const Call &expr) = 0;
     };
 }
 
@@ -33,17 +36,19 @@ namespace stmt
     class Block;
     class If;
     class While;
+    class Function;
 
     template <typename T>
     class Visitor
     {
     public:
         virtual ~Visitor() = default;
-        T virtual visit_print_stmt(const Print &stmt) = 0;
-        T virtual visit_expr_stmt(const Expression &stmt) = 0;
-        T virtual visit_vardecl_stmt(const VariableDecl &stmt) = 0;
-        T virtual visit_block_stmt(const Block &stmt) = 0;
-        T virtual visit_if_stmt(const If &stmt) = 0;
-        T virtual visit_while_stmt(const While &stmt) = 0;
+        T virtual visit_print_stmt(Print &stmt) = 0;
+        T virtual visit_expr_stmt(Expression &stmt) = 0;
+        T virtual visit_vardecl_stmt(VariableDecl &stmt) = 0;
+        T virtual visit_block_stmt(Block &stmt) = 0;
+        T virtual visit_if_stmt(If &stmt) = 0;
+        T virtual visit_while_stmt(std::shared_ptr<While> stmt) = 0;
+        T virtual visit_fun_stmt(std::shared_ptr<Function> stmt) = 0;
     };
 }

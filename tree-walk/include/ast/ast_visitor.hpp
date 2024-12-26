@@ -13,13 +13,13 @@ public:
     }
     std::string visit_literal_expr(const expr::Literal &expr) override
     {
-        if (std::holds_alternative<std::string>(expr.value))
+        if (expr.value.is_string())
         {
-            return std::get<std::string>(expr.value);
+            return std::get<std::string>(expr.value.v);
         }
-        else if (std::holds_alternative<double>(expr.value))
+        else if (expr.value.is_double())
         {
-            return std::to_string(std::get<double>(expr.value));
+            return std::to_string(std::get<double>(expr.value.v));
         }
         else
         {

@@ -1,48 +1,49 @@
 #include <interpreter.hpp>
 #include <lox.hpp>
+#include <memory>
 
-expr::value Interpreter::visit_binary_expr(const expr::Binary &expr)
+expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
 {
-    expr::value left = evaluate(*expr.left);
-    expr::value right = evaluate(*expr.right);
+    expr::Value left = evaluate(*expr.left);
+    expr::Value right = evaluate(*expr.right);
 
     switch (expr.op.get_type())
     {
     case Token::TokenType::MINUS:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) - std::get<double>(right);
+        return expr::Value(std::get<double>(left.v) - std::get<double>(right.v));
 
     case Token::TokenType::STAR:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) * std::get<double>(right);
+        return std::get<double>(left.v) * std::get<double>(right.v);
 
     case Token::TokenType::SLASH:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) / std::get<double>(right);
+        return std::get<double>(left.v) / std::get<double>(right.v);
 
     case Token::TokenType::PLUS:
-        if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right))
+        if (left.is_double() && right.is_double())
         {
-            return std::get<double>(left) + std::get<double>(right);
+            return std::get<double>(left.v) + std::get<double>(right.v);
         }
-        else if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right))
+        else if (left.is_string() && right.is_string())
         {
-            return std::get<std::string>(left) + std::get<std::string>(right);
+            return std::get<std::string>(left.v) + std::get<std::string>(right.v);
         }
 
         throw RuntimeError(expr.op, "Operands must be two numbers or two strings.");
 
     case Token::TokenType::GREATER:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) > std::get<double>(right);
+        return std::get<double>(left.v) > std::get<double>(right.v);
 
     case Token::TokenType::GREATER_EQUAL:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) >= std::get<double>(right);
+        return std::get<double>(left.v) >= std::get<double>(right.v);
 
     case Token::TokenType::LESS:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left) < std::get<double>(right);
+        return std::get<double>(left.v) < std::get<double>(right.v);
 
     case Token::TokenType::EQUAL_EQUAL:
         return is_equal(left, right);
@@ -54,142 +55,145 @@ expr::value Interpreter::visit_binary_expr(const expr::Binary &expr)
     // unreachable
     throw std::runtime_error("interpreter error");
 }
-expr::value Interpreter::visit_grouping_expr(const expr::Grouping &expr)
+expr::Value Interpreter::visit_grouping_expr(const expr::Grouping &expr)
 {
     return evaluate(*expr.expr);
 }
-expr::value Interpreter::visit_literal_expr(const expr::Literal &expr)
+expr::Value Interpreter::visit_literal_expr(const expr::Literal &expr)
 {
     return expr.value;
 }
 
-bool Interpreter::is_truthy(const expr::value &value)
+bool Interpreter::is_truthy(const expr::Value &value)
 {
-    if (std::holds_alternative<std::monostate>(value))
+    if (value.is_nil())
     {
-        // nil
         return false;
     }
-    else if (std::holds_alternative<bool>(value))
+    else if (value.is_bool())
     {
-        return std::get<bool>(value);
+        return std::get<bool>(value.v);
     }
     return true;
 }
 
-bool Interpreter::is_equal(const expr::value &left, expr::value &right)
+bool Interpreter::is_equal(const expr::Value &left, expr::Value &right)
 {
-    if (std::holds_alternative<std::monostate>(left) && std::holds_alternative<std::monostate>(right))
+    if (left.is_nil() && right.is_nil())
     {
         return true;
     }
-    else if (std::holds_alternative<std::monostate>(left))
+    else if (left.is_nil())
     {
         return false;
     }
 
-    if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right))
+    if (left.is_double() && right.is_double())
     {
-        return std::get<double>(left) == std::get<double>(right);
+        return std::get<double>(left.v) == std::get<double>(right.v);
     }
-    else if (std::holds_alternative<std::string>(left) && std::holds_alternative<std::string>(right))
+    else if (left.is_string() && right.is_string())
     {
-        return std::get<std::string>(left) == std::get<std::string>(right);
+        return std::get<std::string>(left.v) == std::get<std::string>(right.v);
     }
-    if (std::holds_alternative<bool>(left) && std::holds_alternative<bool>(right))
+    if (left.is_bool() && right.is_bool())
     {
-        return std::get<bool>(left) == std::get<bool>(right);
+        return std::get<bool>(left.v) == std::get<bool>(right.v);
     }
     return false;
 }
 
-expr::value Interpreter::visit_unary_expr(const expr::Unary &expr)
+expr::Value Interpreter::visit_unary_expr(const expr::Unary &expr)
 {
-    expr::value right = evaluate(*expr.right);
+    expr::Value right = evaluate(*expr.right);
 
     switch (expr.op.get_type())
     {
     case Token::TokenType::MINUS:
         check_number_operand(expr.op, right);
-        return -std::get<double>(right);
+        return -std::get<double>(right.v);
 
     case Token::TokenType::BANG:
         return !is_truthy(right);
 
     default:
         // unreachable
-        return nullptr;
+        return {};
     }
 }
 
-void Interpreter::check_number_operand(const Token &op, const expr::value &operand)
+void Interpreter::check_number_operand(const Token &op, const expr::Value &operand)
 {
-    if (std::holds_alternative<double>(operand))
+    if (operand.is_double())
     {
         return;
     }
     throw RuntimeError(op, "Operand must be a number.");
 }
 
-void Interpreter::check_number_operands(const Token &op, const expr::value &left, const expr::value &right)
+void Interpreter::check_number_operands(const Token &op, const expr::Value &left, const expr::Value &right)
 {
-    if (std::holds_alternative<double>(left) && std::holds_alternative<double>(right))
+    if (left.is_double() && right.is_double())
     {
         return;
     }
     throw RuntimeError(op, "Operands must be numbers.");
 }
 
-std::string Interpreter::stringify(const expr::value &value)
+std::string Interpreter::stringify(const expr::Value &value)
 {
-    if (std::holds_alternative<std::monostate>(value))
+    if (value.is_nil())
     {
         return "nil";
     }
-    else if (std::holds_alternative<double>(value))
+    else if (value.is_double())
     {
-        return std::to_string(std::get<double>(value));
+        return std::to_string(value.as<double>());
     }
-    else if (std::holds_alternative<std::string>(value))
+    else if (value.is_string())
     {
-        return std::get<std::string>(value);
+        return value.as<std::string>();
     }
-    else if (std::holds_alternative<bool>(value))
+    else if (value.is_bool())
     {
-        return std::get<bool>(value) ? "true" : "false";
+        return value.as<bool>() ? "true" : "false";
     }
-    return "";
+    else if (value.is_callable())
+    {
+        return value.as<LoxFunction>().to_string();
+    }
+    return "???unknown???";
 }
 
-void Interpreter::visit_print_stmt(const stmt::Print &stmt)
+void Interpreter::visit_print_stmt(stmt::Print &stmt)
 {
     auto value = evaluate(*stmt.ex.get());
     std::cout << stringify(value) << std::endl;
 }
 
-void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
+void Interpreter::visit_expr_stmt(stmt::Expression &stmt)
 {
-    // show value only in repl
+    show_exp = true;
     auto v = evaluate(*stmt.ex.get());
-    if (repl)
-    {
+    if (repl && show_exp){
         std::cout << stringify(v) << std::endl;
     }
 }
 
-expr::value Interpreter::visit_variable_expr(const expr::Variable &expr)
+expr::Value Interpreter::visit_variable_expr(const expr::Variable &expr)
 {
     return env.get()->get(expr.token);
 }
 
-expr::value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
+expr::Value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
 {
+    show_exp = false;
     auto value = evaluate(*expr.value);
     env.get()->assign(expr.token, value);
     return value;
 }
 
-expr::value Interpreter::visit_logical_expr(const expr::Logical &expr)
+expr::Value Interpreter::visit_logical_expr(const expr::Logical &expr)
 {
     auto left = evaluate(*expr.left);
     if (expr.op.get_type() == Token::TokenType::OR)
@@ -210,10 +214,37 @@ expr::value Interpreter::visit_logical_expr(const expr::Logical &expr)
     return evaluate(*expr.right);
 }
 
-void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
+expr::Value Interpreter::visit_call_expr(const expr::Call &expr)
+{
+    show_exp = false;
+    auto callee = evaluate(*expr.callee);
+    auto args = std::vector<expr::Value>{};
+    for (const auto &arg : expr.arguments)
+    {
+        args.push_back(evaluate(*arg));
+    }
+
+    if (!callee.is_callable())
+    {
+        throw RuntimeError(expr.paren, "Can only call functions and classes.");
+    }
+
+    // probably this has to be reworked to handle object construction
+    auto &func = callee.as<LoxFunction>();
+
+    if (func.arity() != args.size())
+    {
+        throw RuntimeError(expr.paren, "Expected " + std::to_string(func.arity()) + " arguments but got " + std::to_string(args.size()));
+    }
+
+    return callee.as<LoxFunction>().call(*this, args);
+}
+
+void Interpreter::visit_vardecl_stmt(stmt::VariableDecl &stmt)
 {
     // by default, if a variable declaration has no initializer, the value is nil
-    expr::value value{};
+    show_exp = false;
+    expr::Value value{};
     if (stmt.initializer != nullptr)
     {
         value = evaluate(*stmt.initializer);
@@ -222,40 +253,46 @@ void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
     env.get()->define(stmt.token.get_lexeme(), value);
 }
 
-void Interpreter::visit_block_stmt(const stmt::Block &stmt)
+void Interpreter::visit_block_stmt(stmt::Block &stmt)
 {
     execute_block(stmt.statements, std::make_unique<Environment>(env));
 }
 
-void Interpreter::visit_if_stmt(const stmt::If &stmt)
+void Interpreter::visit_if_stmt(stmt::If &stmt)
 {
     if (is_truthy(evaluate(*stmt.condition)))
     {
-        execute(*stmt.then_stm);
+        execute(std::move(stmt.then_stm));
     }
     else if (stmt.else_stm != nullptr)
     {
-        execute(*stmt.else_stm);
+        execute(std::shared_ptr<stmt::StmtBase>(stmt.else_stm));
     }
 }
 
-void Interpreter::visit_while_stmt(const stmt::While &stmt)
+void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
 {
-    while (is_truthy(evaluate(*stmt.condition)))
+    while (is_truthy(evaluate(*stmt->condition)))
     {
-        execute(*stmt.body);
+        execute(stmt->body);
     }
 }
 
-void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
+void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
+{
+    auto func = LoxFunction(stmt);
+    env->define(stmt->name.get_lexeme(), func);
+}
+
+void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
 {
     auto previous = env;
     try
     {
         env = std::move(environ);
-        for (const auto &stm : stmts)
+        for (auto &stm : stmts)
         {
-            execute(*stm);
+            execute(stm);
         }
     }
     catch (...)
@@ -266,14 +303,14 @@ void Interpreter::execute_block(const std::vector<std::unique_ptr<stmt::StmtBase
     env = previous;
 }
 
-void Interpreter::interpret(const std::vector<std::unique_ptr<stmt::StmtBase>> &stms, bool repl)
+void Interpreter::interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &stms, bool repl)
 {
     this->repl = repl;
     try
     {
-        for (const auto &stm : stms)
+        for (auto &stm : stms)
         {
-            execute(*stm);
+            execute(stm);
         }
     }
     catch (const RuntimeError &error)

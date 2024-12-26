@@ -1,102 +1,102 @@
 #include <parser.hpp>
 #include <lox.hpp>
 
-std::unique_ptr<expr::ExprBase> Parser::expression()
+std::shared_ptr<expr::ExprBase> Parser::expression()
 {
     return assignment();
 }
 
-std::unique_ptr<expr::ExprBase> Parser::equality()
+std::shared_ptr<expr::ExprBase> Parser::equality()
 {
     auto expr = comparison();
     while (match(Token::TokenType::BANG_EQUAL, Token::TokenType::EQUAL_EQUAL))
     {
         auto op = previous();
         auto right = comparison();
-        expr = std::make_unique<expr::Binary>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Binary>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
 
-std::unique_ptr<expr::ExprBase> Parser::comparison()
+std::shared_ptr<expr::ExprBase> Parser::comparison()
 {
     auto expr = term();
     while (match(Token::TokenType::GREATER, Token::TokenType::GREATER_EQUAL, Token::TokenType::LESS, Token::TokenType::LESS_EQUAL))
     {
         auto op = previous();
         auto right = term();
-        expr = std::make_unique<expr::Binary>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Binary>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
 
-std::unique_ptr<expr::ExprBase> Parser::term()
+std::shared_ptr<expr::ExprBase> Parser::term()
 {
     auto expr = factor();
     while (match(Token::TokenType::MINUS, Token::TokenType::PLUS))
     {
         auto op = previous();
         auto right = factor();
-        expr = std::make_unique<expr::Binary>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Binary>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
 
-std::unique_ptr<expr::ExprBase> Parser::factor()
+std::shared_ptr<expr::ExprBase> Parser::factor()
 {
     auto expr = unary();
     while (match(Token::TokenType::SLASH, Token::TokenType::STAR))
     {
         auto op = previous();
         auto right = unary();
-        expr = std::make_unique<expr::Binary>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Binary>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
 
-std::unique_ptr<expr::ExprBase> Parser::unary()
+std::shared_ptr<expr::ExprBase> Parser::unary()
 {
     if (match(Token::TokenType::BANG, Token::TokenType::MINUS))
     {
         auto op = previous();
         auto right = unary();
-        return std::make_unique<expr::Unary>(op, std::move(right));
+        return std::make_shared<expr::Unary>(op, std::move(right));
     }
-    return primary();
+    return call();
 }
 
-std::unique_ptr<expr::ExprBase> Parser::primary()
+std::shared_ptr<expr::ExprBase> Parser::primary()
 {
     if (match(Token::TokenType::FALSE))
     {
-        return std::make_unique<expr::Literal>(Token::Literal{false});
+        return std::make_shared<expr::Literal>(Token::Literal{false});
     }
     else if (match(Token::TokenType::TRUE))
     {
-        return std::make_unique<expr::Literal>(Token::Literal{true});
+        return std::make_shared<expr::Literal>(Token::Literal{true});
     }
     else if (match(Token::TokenType::NIL))
     {
-        return std::make_unique<expr::Literal>(Token::Literal{});
+        return std::make_shared<expr::Literal>(Token::Literal{});
     }
     else if (match(Token::TokenType::NUMBER, Token::TokenType::STRING))
     {
-        return std::make_unique<expr::Literal>(previous().get_literal());
+        return std::make_shared<expr::Literal>(previous().get_literal());
     }
     else if (match(Token::TokenType::IDENTIFIER))
     {
-        return std::make_unique<expr::Variable>(previous());
+        return std::make_shared<expr::Variable>(previous());
     }
     else if (match(Token::TokenType::LEFT_PAREN))
     {
         auto expr = expression();
         consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after expression.");
-        return std::make_unique<expr::Grouping>(std::move(expr));
+        return std::make_shared<expr::Grouping>(std::move(expr));
     }
     throw error(peek(), "Expect expression.");
 }
 
-std::unique_ptr<expr::ExprBase> Parser::assignment()
+std::shared_ptr<expr::ExprBase> Parser::assignment()
 {
     // trick: parse the left side as a single expression so that we automatically stop
     // at the first '='
@@ -110,34 +110,72 @@ std::unique_ptr<expr::ExprBase> Parser::assignment()
         if (typeid(*expr) == typeid(expr::Variable))
         {
             auto &name = dynamic_cast<expr::Variable &>(*expr);
-            return std::make_unique<expr::Assignment>(name.token, std::move(value));
+            return std::make_shared<expr::Assignment>(name.token, std::move(value));
         }
         error(equals, "Invalid assignment target.");
     }
     return expr;
 }
 
-std::unique_ptr<expr::ExprBase> Parser::logical_or()
+std::shared_ptr<expr::ExprBase> Parser::logical_or()
 {
     auto expr = logical_and();
     while (match(Token::TokenType::OR))
     {
         auto op = previous();
         auto right = logical_and();
-        expr = std::make_unique<expr::Logical>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Logical>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
-std::unique_ptr<expr::ExprBase> Parser::logical_and()
+std::shared_ptr<expr::ExprBase> Parser::logical_and()
 {
     auto expr = equality();
     while (match(Token::TokenType::AND))
     {
         auto op = previous();
         auto right = equality();
-        expr = std::make_unique<expr::Logical>(std::move(expr), op, std::move(right));
+        expr = std::make_shared<expr::Logical>(std::move(expr), op, std::move(right));
     }
     return expr;
+}
+
+std::shared_ptr<expr::ExprBase> Parser::call()
+{
+    auto expr = primary();
+
+    while (true)
+    {
+        if (match(Token::TokenType::LEFT_PAREN))
+        {
+            expr = finish_call(std::move(expr));
+        }
+        else
+        {
+            break;
+        }
+    }
+    return expr;
+}
+
+std::shared_ptr<expr::ExprBase> Parser::finish_call(std::shared_ptr<expr::ExprBase> callee)
+{
+    std::vector<std::shared_ptr<expr::ExprBase>> arguments;
+    if (!check(Token::TokenType::RIGHT_PAREN))
+    {
+        do
+        {
+            if (arguments.size() >= 255)
+            {
+                // don't throw here because the parser is not confused
+                // just report the error
+                error(peek(), "Can't have more than 255 arguments.");
+            }
+            arguments.push_back(expression());
+        } while (match(Token::TokenType::COMMA));
+    }
+    auto paren = consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after arguments.");
+    return std::make_shared<expr::Call>(std::move(callee), paren, std::move(arguments));
 }
 
 Parser::ParseError Parser::error(Token token, const std::string &message)
@@ -158,7 +196,7 @@ Token Parser::consume(Token::TokenType type, const std::string &message)
     }
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::statement()
+std::shared_ptr<stmt::StmtBase> Parser::statement()
 {
     if (match(Token::TokenType::PRINT))
     {
@@ -177,7 +215,7 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
         // why not just block()?
         // because block() is used to parse function blocks and we don't want the result to
         // be embedded in a stmt::Block
-        return std::make_unique<stmt::Block>(block());
+        return std::make_shared<stmt::Block>(block());
     }
     else if (match(Token::TokenType::IF))
     {
@@ -186,30 +224,34 @@ std::unique_ptr<stmt::StmtBase> Parser::statement()
     return expr_statement();
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::print_statement()
+std::shared_ptr<stmt::StmtBase> Parser::print_statement()
 {
     auto expr = expression();
     consume(Token::TokenType::SEMICOLON, "Expect ';' after value.");
-    return std::make_unique<stmt::Print>(std::move(expr));
+    return std::make_shared<stmt::Print>(std::move(expr));
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::expr_statement()
+std::shared_ptr<stmt::StmtBase> Parser::expr_statement()
 {
     auto expr = expression();
     if (!repl || peek().get_type() == Token::TokenType::SEMICOLON)
     {
         consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
     }
-    return std::make_unique<stmt::Expression>(std::move(expr));
+    return std::make_shared<stmt::Expression>(std::move(expr));
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::declaration()
+std::shared_ptr<stmt::StmtBase> Parser::declaration()
 {
     try
     {
         if (match(Token::TokenType::VAR))
         {
             return var_declaration();
+        }
+        else if (match(Token::TokenType::FUN))
+        {
+            return function("function");
         }
         return statement();
     }
@@ -220,11 +262,11 @@ std::unique_ptr<stmt::StmtBase> Parser::declaration()
     }
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::var_declaration()
+std::shared_ptr<stmt::StmtBase> Parser::var_declaration()
 {
 
     Token name = consume(Token::TokenType::IDENTIFIER, "Expect variable name.");
-    std::unique_ptr<expr::ExprBase> initializer{};
+    std::shared_ptr<expr::ExprBase> initializer{};
 
     if (match(Token::TokenType::EQUAL))
     {
@@ -232,12 +274,12 @@ std::unique_ptr<stmt::StmtBase> Parser::var_declaration()
     }
 
     consume(Token::TokenType::SEMICOLON, "Expect ';' after variable declaration.");
-    return std::make_unique<stmt::VariableDecl>(name, std::move(initializer));
+    return std::make_shared<stmt::VariableDecl>(name, std::move(initializer));
 }
 
-std::vector<std::unique_ptr<stmt::StmtBase>> Parser::block()
+std::vector<std::shared_ptr<stmt::StmtBase>> Parser::block()
 {
-    std::vector<std::unique_ptr<stmt::StmtBase>> statements;
+    std::vector<std::shared_ptr<stmt::StmtBase>> statements;
     while (!check(Token::TokenType::RIGHT_BRACE) && !is_at_end())
     {
         statements.push_back(declaration());
@@ -246,34 +288,34 @@ std::vector<std::unique_ptr<stmt::StmtBase>> Parser::block()
     return statements;
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::if_statement()
+std::shared_ptr<stmt::StmtBase> Parser::if_statement()
 {
     consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
     auto condition = expression();
     consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after condition.");
 
     auto then_stm = statement();
-    std::unique_ptr<stmt::StmtBase> else_stm = nullptr;
+    std::shared_ptr<stmt::StmtBase> else_stm = nullptr;
     if (match(Token::TokenType::ELSE))
     {
         else_stm = statement();
     }
-    return std::make_unique<stmt::If>(std::move(condition), std::move(then_stm), std::move(else_stm));
+    return std::make_shared<stmt::If>(std::move(condition), std::move(then_stm), std::move(else_stm));
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::while_statement()
+std::shared_ptr<stmt::StmtBase> Parser::while_statement()
 {
     consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
     auto condition = expression();
     consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after condition.");
     auto body = statement();
-    return std::make_unique<stmt::While>(std::move(condition), std::move(body));
+    return std::make_shared<stmt::While>(std::move(condition), std::move(body));
 }
 
-std::unique_ptr<stmt::StmtBase> Parser::for_statement()
+std::shared_ptr<stmt::StmtBase> Parser::for_statement()
 {
     consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'for'.");
-    std::unique_ptr<stmt::StmtBase> initializer;
+    std::shared_ptr<stmt::StmtBase> initializer;
     if (match(Token::TokenType::SEMICOLON))
     {
         initializer = nullptr;
@@ -287,14 +329,14 @@ std::unique_ptr<stmt::StmtBase> Parser::for_statement()
         initializer = expr_statement();
     }
     // first ; parsed
-    std::unique_ptr<expr::ExprBase> condition = nullptr;
+    std::shared_ptr<expr::ExprBase> condition = nullptr;
     if (!check(Token::TokenType::SEMICOLON))
     {
         condition = expression();
     }
     consume(Token::TokenType::SEMICOLON, "Expect ';' after loop condition.");
 
-    std::unique_ptr<expr::ExprBase> increment = nullptr;
+    std::shared_ptr<expr::ExprBase> increment = nullptr;
     if (!check(Token::TokenType::RIGHT_PAREN))
     {
         increment = expression();
@@ -307,26 +349,48 @@ std::unique_ptr<stmt::StmtBase> Parser::for_statement()
 
     if (increment)
     {
-        auto statements = std::vector<std::unique_ptr<stmt::StmtBase>>();
+        auto statements = std::vector<std::shared_ptr<stmt::StmtBase>>();
         statements.emplace_back(std::move(body));
         // TODO: in repl this gets printed
-        statements.push_back(std::make_unique<stmt::Expression>(std::move(increment)));
-        body = std::make_unique<stmt::Block>(std::move(statements));
+        statements.push_back(std::make_shared<stmt::Expression>(std::move(increment)));
+        body = std::make_shared<stmt::Block>(std::move(statements));
     }
     if (!condition)
     {
-        condition = std::make_unique<expr::Literal>(Token::Literal{true});
+        condition = std::make_shared<expr::Literal>(Token::Literal{true});
     }
-    body = std::make_unique<stmt::While>(std::move(condition), std::move(body));
+    body = std::make_shared<stmt::While>(std::move(condition), std::move(body));
 
     if (initializer)
     {
-        auto statements = std::vector<std::unique_ptr<stmt::StmtBase>>();
+        auto statements = std::vector<std::shared_ptr<stmt::StmtBase>>();
         statements.emplace_back(std::move(initializer));
         statements.emplace_back(std::move(body));
-        body = std::make_unique<stmt::Block>(std::move(statements));
+        body = std::make_shared<stmt::Block>(std::move(statements));
     }
     return body;
+}
+
+std::shared_ptr<stmt::StmtBase> Parser::function(std::string kind)
+{
+    Token name = consume(Token::TokenType::IDENTIFIER, "Expect " + kind + " name.");
+    consume(Token::TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
+    std::vector<Token> params;
+    if (!check(Token::TokenType::RIGHT_PAREN))
+    {
+        do
+        {
+            if (params.size() >= 255)
+            {
+                error(peek(), "Can't have more than 255 parameters.");
+            }
+            params.push_back(consume(Token::TokenType::IDENTIFIER, "Expect parameter name."));
+        } while (match(Token::TokenType::COMMA));
+    }
+    consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+    consume(Token::TokenType::LEFT_BRACE, "Expect '{' before " + kind + " body.");
+    auto body = block();
+    return std::make_shared<stmt::Function>(name, params, std::move(body));
 }
 
 void Parser::synchronize()

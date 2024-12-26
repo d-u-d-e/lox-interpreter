@@ -3,36 +3,72 @@
 #include <visitor.hpp>
 #include <token.hpp>
 #include <memory>
+#include <function.hpp>
 
 namespace expr
 {
-
-    using value = std::variant<std::monostate, std::string, double, bool>;
+    struct Value
+    {
+    public:
+        virtual ~Value() = default;
+        template <typename T>
+        Value(T &&v) : v(std::forward<T>(v)) {}
+        Value(const Value &v) = default;
+        Value(Value &&v) = default;
+        Value &operator=(const Value &v) = default;
+        template <typename T>
+        T as() const
+        {
+            return std::get<T>(v);
+        }
+        template <typename T>
+        T &as()
+        {
+            return std::get<T>(v);
+        }
+        Value() : v(std::monostate()) {}
+        bool is_string() const { return std::holds_alternative<std::string>(v); }
+        bool is_double() const { return std::holds_alternative<double>(v); }
+        bool is_bool() const { return std::holds_alternative<bool>(v); }
+        bool is_nil() const { return std::holds_alternative<std::monostate>(v); }
+        bool is_callable() const { return std::holds_alternative<LoxFunction>(v); };
+        std::variant<std::monostate, std::string, double, bool, LoxFunction> v{};
+    };
 
     class ExprBase
     {
     public:
         virtual ~ExprBase() = default;
         virtual std::string accept(Visitor<std::string> &visitor) const = 0;
-        virtual expr::value accept(expr::Visitor<expr::value> &visitor) const = 0;
+        virtual Value accept(expr::Visitor<Value> &visitor) const = 0;
     };
 
     struct Binary : public ExprBase
     {
-        Binary(std::unique_ptr<ExprBase> &&left, const Token &op, std::unique_ptr<ExprBase> &&right) : left(std::move(left)), op(op), right(std::move(right)) {}
+        Binary(std::shared_ptr<ExprBase> left, const Token &op, std::shared_ptr<ExprBase> right) : left(left), op(op), right(right) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_binary_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_binary_expr(*this); }
-        std::unique_ptr<ExprBase> left;
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_binary_expr(*this); }
+        std::shared_ptr<ExprBase> left;
         Token op;
-        std::unique_ptr<ExprBase> right;
+        std::shared_ptr<ExprBase> right;
+    };
+
+    struct Call : public ExprBase
+    {
+        Call(std::shared_ptr<ExprBase> callee, const Token &paren, std::vector<std::shared_ptr<ExprBase>> &&arguments) : callee(callee), paren(paren), arguments(std::move(arguments)) {}
+        std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_call_expr(*this); }
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_call_expr(*this); }
+        std::shared_ptr<ExprBase> callee;
+        Token paren;
+        std::vector<std::shared_ptr<ExprBase>> arguments;
     };
 
     struct Grouping : public ExprBase
     {
-        Grouping(std::unique_ptr<ExprBase> &&expr) : expr(std::move(expr)) {}
+        Grouping(std::shared_ptr<ExprBase> &&expr) : expr(expr) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_grouping_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_grouping_expr(*this); }
-        std::unique_ptr<ExprBase> expr;
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_grouping_expr(*this); }
+        std::shared_ptr<ExprBase> expr;
     };
 
     struct Literal : public ExprBase
@@ -51,50 +87,46 @@ namespace expr
             {
                 value = std::get<bool>(l);
             }
-            else
-            {
-                value = std::monostate();
-            }
         }
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_literal_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_literal_expr(*this); }
-        expr::value value;
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_literal_expr(*this); }
+        Value value;
     };
 
     struct Logical : public ExprBase
     {
-        Logical(std::unique_ptr<ExprBase> &&left, const Token &op, std::unique_ptr<ExprBase> &&right) : left(std::move(left)), op(op), right(std::move(right)) {}
+        Logical(std::shared_ptr<ExprBase> left, const Token &op, std::shared_ptr<ExprBase> right) : left(left), op(op), right(right) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_logical_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_logical_expr(*this); }
-        std::unique_ptr<ExprBase> left;
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_logical_expr(*this); }
+        std::shared_ptr<ExprBase> left;
         Token op;
-        std::unique_ptr<ExprBase> right;
+        std::shared_ptr<ExprBase> right;
     };
 
     struct Unary : public ExprBase
     {
-        Unary(const Token &op, std::unique_ptr<ExprBase> &&right) : op(op), right(std::move(right)) {}
+        Unary(const Token &op, std::shared_ptr<ExprBase> right) : op(op), right(right) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_unary_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_unary_expr(*this); }
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_unary_expr(*this); }
         Token op;
-        std::unique_ptr<ExprBase> right;
+        std::shared_ptr<ExprBase> right;
     };
 
     struct Variable : public ExprBase
     {
         Variable(const Token &token) : token(token) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_variable_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_variable_expr(*this); }
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_variable_expr(*this); }
         Token token;
     };
 
     struct Assignment : public ExprBase
     {
-        Assignment(const Token &token, std::unique_ptr<ExprBase> && value) : token(token), value(std::move(value)) {}
+        Assignment(const Token &token, std::shared_ptr<ExprBase> &&value) : token(token), value(value) {}
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_assignment_expr(*this); }
-        expr::value accept(Visitor<expr::value> &visitor) const override { return visitor.visit_assignment_expr(*this); }
+        Value accept(Visitor<Value> &visitor) const override { return visitor.visit_assignment_expr(*this); }
         Token token;
-        std::unique_ptr<ExprBase> value;
+        std::shared_ptr<ExprBase> value;
     };
 
 }

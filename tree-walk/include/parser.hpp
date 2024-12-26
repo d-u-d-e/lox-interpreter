@@ -12,9 +12,9 @@ public:
 
     Parser(const std::vector<Token> &tokens, bool repl = false) : tokens(tokens), repl(repl) {}
 
-    std::vector<std::unique_ptr<stmt::StmtBase>> parse()
+    std::vector<std::shared_ptr<stmt::StmtBase>> parse()
     {
-        std::vector<std::unique_ptr<stmt::StmtBase>> statements;
+        std::vector<std::shared_ptr<stmt::StmtBase>> statements;
 
         while (!is_at_end())
         {
@@ -29,26 +29,29 @@ private:
     Token consume(Token::TokenType type, const std::string &message);
     void synchronize();
 
-    std::unique_ptr<expr::ExprBase> expression();
-    std::unique_ptr<expr::ExprBase> equality();
-    std::unique_ptr<expr::ExprBase> comparison();
-    std::unique_ptr<expr::ExprBase> term();
-    std::unique_ptr<expr::ExprBase> factor();
-    std::unique_ptr<expr::ExprBase> unary();
-    std::unique_ptr<expr::ExprBase> primary();
-    std::unique_ptr<expr::ExprBase> assignment();
-    std::unique_ptr<expr::ExprBase> logical_or();
-    std::unique_ptr<expr::ExprBase> logical_and();
+    std::shared_ptr<expr::ExprBase> equality();
+    std::shared_ptr<expr::ExprBase> comparison();
+    std::shared_ptr<expr::ExprBase> term();
+    std::shared_ptr<expr::ExprBase> factor();
+    std::shared_ptr<expr::ExprBase> unary();
+    std::shared_ptr<expr::ExprBase> primary();
+    std::shared_ptr<expr::ExprBase> assignment();
+    std::shared_ptr<expr::ExprBase> logical_or();
+    std::shared_ptr<expr::ExprBase> logical_and();
+    std::shared_ptr<expr::ExprBase> call();
+    std::shared_ptr<expr::ExprBase> finish_call(std::shared_ptr<expr::ExprBase> callee);
+    std::shared_ptr<expr::ExprBase> expression();
 
-    std::unique_ptr<stmt::StmtBase> statement();
-    std::unique_ptr<stmt::StmtBase> print_statement();
-    std::unique_ptr<stmt::StmtBase> expr_statement();
-    std::unique_ptr<stmt::StmtBase> declaration();
-    std::unique_ptr<stmt::StmtBase> var_declaration();
-    std::vector<std::unique_ptr<stmt::StmtBase>> block();
-    std::unique_ptr<stmt::StmtBase> if_statement();
-    std::unique_ptr<stmt::StmtBase> while_statement();
-    std::unique_ptr<stmt::StmtBase> for_statement();
+    std::shared_ptr<stmt::StmtBase> print_statement();
+    std::shared_ptr<stmt::StmtBase> expr_statement();
+    std::shared_ptr<stmt::StmtBase> declaration();
+    std::shared_ptr<stmt::StmtBase> var_declaration();
+    std::shared_ptr<stmt::StmtBase> statement();
+    std::vector<std::shared_ptr<stmt::StmtBase>> block();
+    std::shared_ptr<stmt::StmtBase> if_statement();
+    std::shared_ptr<stmt::StmtBase> while_statement();
+    std::shared_ptr<stmt::StmtBase> for_statement();
+    std::shared_ptr<stmt::StmtBase> function(std::string kind);
 
     bool is_at_end()
     {
