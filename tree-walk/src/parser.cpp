@@ -210,6 +210,10 @@ std::shared_ptr<stmt::StmtBase> Parser::statement()
     {
         return for_statement();
     }
+    else if (match(Token::TokenType::RETURN))
+    {
+        return return_statement();
+    }
     else if (match(Token::TokenType::LEFT_BRACE))
     {
         // why not just block()?
@@ -390,6 +394,18 @@ std::shared_ptr<stmt::StmtBase> Parser::function(std::string kind)
     consume(Token::TokenType::LEFT_BRACE, "Expect '{' before " + kind + " body.");
     auto body = block();
     return std::make_shared<stmt::Function>(name, params, std::move(body));
+}
+
+std::shared_ptr<stmt::StmtBase> Parser::return_statement()
+{
+    auto keyword = previous();
+    std::shared_ptr<expr::ExprBase> value = nullptr;
+    if (!check(Token::TokenType::SEMICOLON))
+    {
+        value = expression();
+    }
+    consume(Token::TokenType::SEMICOLON, "Expect ';' after return value.");
+    return std::make_shared<stmt::Return>(std::move(value));
 }
 
 void Parser::synchronize()

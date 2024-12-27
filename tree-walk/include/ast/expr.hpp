@@ -11,11 +11,13 @@ namespace expr
     {
     public:
         virtual ~Value() = default;
-        template <typename T>
-        Value(T &&v) : v(std::forward<T>(v)) {}
-        Value(const Value &v) = default;
-        Value(Value &&v) = default;
-        Value &operator=(const Value &v) = default;
+
+        Value(const std::string &s) : v(s) {}
+        Value(double d) : v(d) {}
+        Value(bool b) : v(b) {}
+        Value(LoxFunction f) : v(f) {}
+        Value() = default;
+
         template <typename T>
         T as() const
         {
@@ -26,7 +28,6 @@ namespace expr
         {
             return std::get<T>(v);
         }
-        Value() : v(std::monostate()) {}
         bool is_string() const { return std::holds_alternative<std::string>(v); }
         bool is_double() const { return std::holds_alternative<double>(v); }
         bool is_bool() const { return std::holds_alternative<bool>(v); }

@@ -36,6 +36,7 @@ public:
     void visit_if_stmt(stmt::If &stmt) override;
     void visit_while_stmt(std::shared_ptr<stmt::While> stmt) override;
     void visit_fun_stmt(std::shared_ptr<stmt::Function> stmt) override;
+    void visit_return_stmt(stmt::Return &stmt) override;
 
     void interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &stms, bool repl = false);
     static std::string stringify(const expr::Value &value);

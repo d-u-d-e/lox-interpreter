@@ -37,6 +37,7 @@ namespace stmt
     class If;
     class While;
     class Function;
+    class Return;
 
     template <typename T>
     class Visitor
@@ -50,5 +51,6 @@ namespace stmt
         T virtual visit_if_stmt(If &stmt) = 0;
         T virtual visit_while_stmt(std::shared_ptr<While> stmt) = 0;
         T virtual visit_fun_stmt(std::shared_ptr<Function> stmt) = 0;
+        T virtual visit_return_stmt(Return &stmt) = 0;
     };
 }

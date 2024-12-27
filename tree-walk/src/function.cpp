@@ -1,5 +1,6 @@
 #include <function.hpp>
 #include <interpreter.hpp>
+#include <return.hpp>
 
 expr::Value LoxFunction::call(Interpreter &interpreter, const std::vector<expr::Value> &args)
 {
@@ -10,8 +11,15 @@ expr::Value LoxFunction::call(Interpreter &interpreter, const std::vector<expr::
         env->define(params[i].get_lexeme(), args[i]);
     }
 
-    interpreter.execute_block(declaration->body, std::move(env));
-    return {};
+    try
+    {
+        interpreter.execute_block(declaration->body, std::move(env));
+    }
+    catch (Return &ret){
+        return ret.value;
+    }
+    // function implicitely returns nil if no return is encountered
+    return expr::Value();
 }
 
 int LoxFunction::arity() const

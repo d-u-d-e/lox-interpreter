@@ -1,6 +1,7 @@
 #include <interpreter.hpp>
 #include <lox.hpp>
 #include <memory>
+#include <return.hpp>
 
 expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
 {
@@ -44,6 +45,10 @@ expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
     case Token::TokenType::LESS:
         check_number_operands(expr.op, left, right);
         return std::get<double>(left.v) < std::get<double>(right.v);
+
+    case Token::TokenType::LESS_EQUAL:
+        check_number_operands(expr.op, left, right);
+        return std::get<double>(left.v) <= std::get<double>(right.v);
 
     case Token::TokenType::EQUAL_EQUAL:
         return is_equal(left, right);
@@ -175,7 +180,8 @@ void Interpreter::visit_expr_stmt(stmt::Expression &stmt)
 {
     show_exp = true;
     auto v = evaluate(*stmt.ex.get());
-    if (repl && show_exp){
+    if (repl && show_exp)
+    {
         std::cout << stringify(v) << std::endl;
     }
 }
@@ -283,6 +289,16 @@ void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
     auto lexeme = stmt->name.get_lexeme();
     LoxFunction func(std::move(stmt));
     env->define(lexeme, func);
+}
+
+void Interpreter::visit_return_stmt(stmt::Return &stmt)
+{
+    if (stmt.value != nullptr)
+    {
+        throw Return(evaluate(*stmt.value));
+    }
+    // by default 'return;' returns nil
+    throw Return(expr::Value());
 }
 
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)

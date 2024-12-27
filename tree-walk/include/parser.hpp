@@ -52,6 +52,7 @@ private:
     std::shared_ptr<stmt::StmtBase> while_statement();
     std::shared_ptr<stmt::StmtBase> for_statement();
     std::shared_ptr<stmt::StmtBase> function(std::string kind);
+    std::shared_ptr<stmt::StmtBase> return_statement();
 
     bool is_at_end()
     {

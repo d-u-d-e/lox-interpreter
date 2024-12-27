@@ -95,4 +95,14 @@ namespace stmt
         std::vector<std::shared_ptr<stmt::StmtBase>> body;
     };
 
+    struct Return : public StmtBase
+    {
+        Return(std::shared_ptr<expr::ExprBase> &&value) : value(std::move(value)) {}
+        void accept(Visitor<void> &visitor) override
+        {
+            visitor.visit_return_stmt(*this);
+        }
+        std::shared_ptr<expr::ExprBase> value;
+    };
+
 }
