@@ -12,43 +12,162 @@ expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
     {
     case Token::TokenType::MINUS:
         check_number_operands(expr.op, left, right);
-        return expr::Value(std::get<double>(left.v) - std::get<double>(right.v));
+
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) - std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) - std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) - std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) - std::get<long long>(right.v);
+        }
 
     case Token::TokenType::STAR:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) * std::get<double>(right.v);
+
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) * std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) * std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) * std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) * std::get<long long>(right.v);
+        }
 
     case Token::TokenType::SLASH:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) / std::get<double>(right.v);
+
+        if (left.is_int() && right.is_int())
+        {
+            return (double)std::get<long long>(left.v) / std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) / std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) / std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) / std::get<long long>(right.v);
+        }
 
     case Token::TokenType::PLUS:
-        if (left.is_double() && right.is_double())
+
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) + std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
         {
             return std::get<double>(left.v) + std::get<double>(right.v);
         }
-        else if (left.is_string() && right.is_string())
+        else if (left.is_int() && right.is_double())
         {
-            return std::get<std::string>(left.v) + std::get<std::string>(right.v);
+            return std::get<long long>(left.v) + std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) + std::get<long long>(right.v);
         }
 
         throw RuntimeError(expr.op, "Operands must be two numbers or two strings.");
 
     case Token::TokenType::GREATER:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) > std::get<double>(right.v);
+
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) > std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) > std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) > std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) > std::get<long long>(right.v);
+        }
 
     case Token::TokenType::GREATER_EQUAL:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) >= std::get<double>(right.v);
+
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) >= std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) >= std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) >= std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) >= std::get<long long>(right.v);
+        }
 
     case Token::TokenType::LESS:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) < std::get<double>(right.v);
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) < std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) < std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) < std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) < std::get<long long>(right.v);
+        }
 
     case Token::TokenType::LESS_EQUAL:
         check_number_operands(expr.op, left, right);
-        return std::get<double>(left.v) <= std::get<double>(right.v);
+        if (left.is_int() && right.is_int())
+        {
+            return std::get<long long>(left.v) <= std::get<long long>(right.v);
+        }
+        else if (left.is_double() && right.is_double())
+        {
+            return std::get<double>(left.v) <= std::get<double>(right.v);
+        }
+        else if (left.is_int() && right.is_double())
+        {
+            return std::get<long long>(left.v) <= std::get<double>(right.v);
+        }
+        else if (left.is_double() && right.is_int())
+        {
+            return std::get<double>(left.v) <= std::get<long long>(right.v);
+        }
 
     case Token::TokenType::EQUAL_EQUAL:
         return is_equal(left, right);
@@ -101,9 +220,13 @@ bool Interpreter::is_equal(const expr::Value &left, expr::Value &right)
     {
         return std::get<std::string>(left.v) == std::get<std::string>(right.v);
     }
-    if (left.is_bool() && right.is_bool())
+    else if (left.is_bool() && right.is_bool())
     {
         return std::get<bool>(left.v) == std::get<bool>(right.v);
+    }
+    else if (left.is_int() && right.is_int())
+    {
+        return std::get<long long>(left.v) == std::get<long long>(right.v);
     }
     return false;
 }
@@ -116,7 +239,15 @@ expr::Value Interpreter::visit_unary_expr(const expr::Unary &expr)
     {
     case Token::TokenType::MINUS:
         check_number_operand(expr.op, right);
-        return -std::get<double>(right.v);
+
+        if (right.is_int())
+        {
+            return -std::get<long long>(right.v);
+        }
+        else
+        {
+            return -std::get<double>(right.v);
+        }
 
     case Token::TokenType::BANG:
         return !is_truthy(right);
@@ -129,7 +260,7 @@ expr::Value Interpreter::visit_unary_expr(const expr::Unary &expr)
 
 void Interpreter::check_number_operand(const Token &op, const expr::Value &operand)
 {
-    if (operand.is_double())
+    if (operand.is_number())
     {
         return;
     }
@@ -138,7 +269,7 @@ void Interpreter::check_number_operand(const Token &op, const expr::Value &opera
 
 void Interpreter::check_number_operands(const Token &op, const expr::Value &left, const expr::Value &right)
 {
-    if (left.is_double() && right.is_double())
+    if (left.is_number() && right.is_number())
     {
         return;
     }
@@ -154,6 +285,10 @@ std::string Interpreter::stringify(const expr::Value &value)
     else if (value.is_double())
     {
         return std::to_string(value.as<double>());
+    }
+    else if (value.is_int())
+    {
+        return std::to_string(value.as<long long>());
     }
     else if (value.is_string())
     {

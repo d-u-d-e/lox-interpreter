@@ -14,6 +14,7 @@ namespace expr
 
         Value(const std::string &s) : v(s) {}
         Value(double d) : v(d) {}
+        Value(long long i) : v(i) {}
         Value(bool b) : v(b) {}
         Value(LoxFunction f) : v(f) {}
         Value() = default;
@@ -31,9 +32,11 @@ namespace expr
         bool is_string() const { return std::holds_alternative<std::string>(v); }
         bool is_double() const { return std::holds_alternative<double>(v); }
         bool is_bool() const { return std::holds_alternative<bool>(v); }
+        bool is_int() const { return std::holds_alternative<long long>(v); }
         bool is_nil() const { return std::holds_alternative<std::monostate>(v); }
         bool is_callable() const { return std::holds_alternative<LoxFunction>(v); };
-        std::variant<std::monostate, std::string, double, bool, LoxFunction> v{};
+        bool is_number() const { return is_double() || is_int(); }
+        std::variant<std::monostate, std::string, double, bool, long long, LoxFunction> v{};
     };
 
     class ExprBase
@@ -87,6 +90,10 @@ namespace expr
             else if (std::holds_alternative<bool>(l))
             {
                 value = std::get<bool>(l);
+            }
+            else if (std::holds_alternative<long long>(l))
+            {
+                value = std::get<long long>(l);
             }
         }
         std::string accept(Visitor<std::string> &visitor) const override { return visitor.visit_literal_expr(*this); }

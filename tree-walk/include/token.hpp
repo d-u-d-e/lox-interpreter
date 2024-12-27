@@ -5,8 +5,7 @@
 class Token
 {
 public:
-
-    using Literal = std::variant<std::monostate, double, std::string, bool>;
+    using Literal = std::variant<std::monostate, double, std::string, bool, long long>;
 
     enum class TokenType
     {
