@@ -4,7 +4,7 @@
 
 expr::Value LoxFunction::call(Interpreter &interpreter, const std::vector<expr::Value> &args)
 {
-    auto env = std::make_unique<Environment>(interpreter.get_env());
+    auto env = std::make_unique<Environment>(closure);
     auto &params = declaration->params;
     for (size_t i = 0; i < params.size(); i++)
     {

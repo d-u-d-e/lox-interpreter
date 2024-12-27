@@ -422,7 +422,7 @@ void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
 void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
 {
     auto lexeme = stmt->name.get_lexeme();
-    LoxFunction func(std::move(stmt));
+    LoxFunction func(std::move(stmt), env);
     env->define(lexeme, func);
 }
 

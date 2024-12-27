@@ -3,10 +3,6 @@
 #include <ast/expr.hpp>
 #include <token.hpp>
 
-class Value {
-
-};
-
 class Environment
 {
 public:
