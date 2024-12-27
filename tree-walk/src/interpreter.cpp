@@ -262,7 +262,7 @@ void Interpreter::visit_if_stmt(stmt::If &stmt)
 {
     if (is_truthy(evaluate(*stmt.condition)))
     {
-        execute(std::move(stmt.then_stm));
+        execute(stmt.then_stm);
     }
     else if (stmt.else_stm != nullptr)
     {
@@ -280,7 +280,7 @@ void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
 
 void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
 {
-    auto func = LoxFunction(stmt);
+    LoxFunction func(stmt);
     env->define(stmt->name.get_lexeme(), func);
 }
 

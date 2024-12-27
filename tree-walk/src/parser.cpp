@@ -350,8 +350,7 @@ std::shared_ptr<stmt::StmtBase> Parser::for_statement()
     if (increment)
     {
         auto statements = std::vector<std::shared_ptr<stmt::StmtBase>>();
-        statements.emplace_back(std::move(body));
-        // TODO: in repl this gets printed
+        statements.push_back(std::move(body));
         statements.push_back(std::make_shared<stmt::Expression>(std::move(increment)));
         body = std::make_shared<stmt::Block>(std::move(statements));
     }
@@ -364,8 +363,8 @@ std::shared_ptr<stmt::StmtBase> Parser::for_statement()
     if (initializer)
     {
         auto statements = std::vector<std::shared_ptr<stmt::StmtBase>>();
-        statements.emplace_back(std::move(initializer));
-        statements.emplace_back(std::move(body));
+        statements.push_back(std::move(initializer));
+        statements.push_back(std::move(body));
         body = std::make_shared<stmt::Block>(std::move(statements));
     }
     return body;
