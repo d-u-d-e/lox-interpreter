@@ -280,8 +280,9 @@ void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
 
 void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
 {
-    LoxFunction func(stmt);
-    env->define(stmt->name.get_lexeme(), func);
+    auto lexeme = stmt->name.get_lexeme();
+    LoxFunction func(std::move(stmt));
+    env->define(lexeme, func);
 }
 
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
