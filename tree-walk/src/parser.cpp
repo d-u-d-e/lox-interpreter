@@ -405,7 +405,7 @@ std::shared_ptr<stmt::StmtBase> Parser::return_statement()
         value = expression();
     }
     consume(Token::TokenType::SEMICOLON, "Expect ';' after return value.");
-    return std::make_shared<stmt::Return>(std::move(value));
+    return std::make_shared<stmt::Return>(keyword, std::move(value));
 }
 
 void Parser::synchronize()

@@ -321,16 +321,24 @@ void Interpreter::visit_expr_stmt(stmt::Expression &stmt)
     }
 }
 
-expr::Value Interpreter::visit_variable_expr(const expr::Variable &expr)
+expr::Value Interpreter::visit_variable_expr(const std::shared_ptr<expr::Variable> &expr)
 {
-    return env.get()->get(expr.token);
+    return lookup_variable(expr->token, expr);
 }
 
-expr::Value Interpreter::visit_assignment_expr(const expr::Assignment &expr)
+expr::Value Interpreter::visit_assignment_expr(const std::shared_ptr<expr::Assignment> &expr)
 {
     show_exp = false;
-    auto value = evaluate(*expr.value);
-    env.get()->assign(expr.token, value);
+    auto value = evaluate(*expr->value);
+
+    if (locals.find(expr) != locals.end())
+    {
+        environ->assign_at(locals[expr], expr->token.get_lexeme(), value);
+    }
+    else
+    {
+        globals->assign(expr->token, value);
+    }
     return value;
 }
 
@@ -391,12 +399,12 @@ void Interpreter::visit_vardecl_stmt(stmt::VariableDecl &stmt)
         value = evaluate(*stmt.initializer);
     }
 
-    env.get()->define(stmt.token.get_lexeme(), value);
+    environ->define(stmt.token.get_lexeme(), value);
 }
 
 void Interpreter::visit_block_stmt(stmt::Block &stmt)
 {
-    execute_block(stmt.statements, std::make_unique<Environment>(env));
+    execute_block(stmt.statements, std::make_unique<Environment>(environ));
 }
 
 void Interpreter::visit_if_stmt(stmt::If &stmt)
@@ -422,8 +430,8 @@ void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
 void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
 {
     auto lexeme = stmt->name.get_lexeme();
-    LoxFunction func(std::move(stmt), env);
-    env->define(lexeme, func);
+    LoxFunction func(std::move(stmt), environ);
+    environ->define(lexeme, func);
 }
 
 void Interpreter::visit_return_stmt(stmt::Return &stmt)
@@ -436,12 +444,12 @@ void Interpreter::visit_return_stmt(stmt::Return &stmt)
     throw Return(expr::Value());
 }
 
-void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ)
+void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> env)
 {
-    auto previous = env;
+    auto previous = environ;
     try
     {
-        env = std::move(environ);
+        environ = std::move(env);
         for (auto &stm : stmts)
         {
             execute(stm);
@@ -449,10 +457,10 @@ void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase
     }
     catch (...)
     {
-        env = previous;
+        environ = previous;
         throw;
     }
-    env = previous;
+    environ = previous;
 }
 
 void Interpreter::interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &stms, bool repl)
@@ -468,5 +476,17 @@ void Interpreter::interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &
     catch (const RuntimeError &error)
     {
         Lox::runtime_error(error);
+    }
+}
+
+expr::Value Interpreter::lookup_variable(const Token &name, const std::shared_ptr<expr::ExprBase> &expr)
+{
+    if (locals.find(expr) == locals.end())
+    {
+        return globals->get(name);
+    }
+    else
+    {
+        return environ->get(name);
     }
 }

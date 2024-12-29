@@ -21,8 +21,8 @@ namespace expr
         T virtual visit_grouping_expr(const Grouping &expr) = 0;
         T virtual visit_literal_expr(const Literal &expr) = 0;
         T virtual visit_unary_expr(const Unary &expr) = 0;
-        T virtual visit_variable_expr(const Variable &expr) = 0;
-        T virtual visit_assignment_expr(const Assignment &expr) = 0;
+        T virtual visit_variable_expr(const std::shared_ptr<Variable> & expr) = 0;
+        T virtual visit_assignment_expr(const std::shared_ptr<expr::Assignment> & expr) = 0;
         T virtual visit_logical_expr(const Logical &expr) = 0;
         T virtual visit_call_expr(const Call &expr) = 0;
     };

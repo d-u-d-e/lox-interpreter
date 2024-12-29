@@ -11,8 +11,8 @@ class Interpreter : public expr::Visitor<expr::Value>,
 public:
     Interpreter()
     {
-        // global env
-        env = std::make_shared<Environment>();
+        globals = std::make_shared<Environment>();
+        environ = globals;
     }
 
     struct RuntimeError : public std::runtime_error
@@ -24,8 +24,8 @@ public:
     expr::Value visit_grouping_expr(const expr::Grouping &expr) override;
     expr::Value visit_literal_expr(const expr::Literal &expr) override;
     expr::Value visit_unary_expr(const expr::Unary &expr) override;
-    expr::Value visit_variable_expr(const expr::Variable &expr) override;
-    expr::Value visit_assignment_expr(const expr::Assignment &expr) override;
+    expr::Value visit_variable_expr(const std::shared_ptr<expr::Variable> & expr) override;
+    expr::Value visit_assignment_expr(const std::shared_ptr<expr::Assignment> & expr) override;
     expr::Value visit_logical_expr(const expr::Logical &expr) override;
     expr::Value visit_call_expr(const expr::Call &expr) override;
 
@@ -40,8 +40,12 @@ public:
 
     void interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &stms, bool repl = false);
     static std::string stringify(const expr::Value &value);
-    std::shared_ptr<Environment> get_env() { return env; }
     void execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts, std::unique_ptr<Environment> environ);
+
+    void resolve(std::shared_ptr<expr::ExprBase> expr, int depth)
+    {
+        locals.emplace(std::move(expr), depth);
+    };
 
 private:
     void check_number_operand(const Token &op, const expr::Value &operand);
@@ -49,9 +53,15 @@ private:
 
     bool is_truthy(const expr::Value &value);
     bool is_equal(const expr::Value &left, expr::Value &right);
-    expr::Value evaluate(const expr::ExprBase &expr) { return expr.accept(*this); }
+    expr::Value evaluate(expr::ExprBase &expr) { return expr.accept(*this); }
     void execute(std::shared_ptr<stmt::StmtBase> stmt) { return stmt->accept(*this); }
-    std::shared_ptr<Environment> env;
+
+    expr::Value lookup_variable(const Token &name, const std::shared_ptr<expr::ExprBase> &expr);
+
+    // distance map updated by resolver
+    std::unordered_map<std::shared_ptr<expr::ExprBase>, int> locals;
+    std::shared_ptr<Environment> globals;
+    std::shared_ptr<Environment> environ;
     bool repl{false};
     bool show_exp{false};
 };

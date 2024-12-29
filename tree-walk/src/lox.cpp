@@ -2,6 +2,7 @@
 #include <parser.hpp>
 #include <ast/ast_visitor.hpp>
 #include <interpreter.hpp>
+#include <resolver.hpp>
 
 bool Lox::had_error{false};
 bool Lox::had_runtime_error{false};
@@ -25,8 +26,13 @@ void Lox::run(const std::string &src, bool repl)
         return;
     }
 
-    interpreter.interpret(statements, repl);
+    Resolver resolver(interpreter);
+    resolver.resolve(statements);
 
-    // ASTVisitor visitor;
-    // std::cout << visitor.print(*expr) << std::endl;
+    if (had_error)
+    {
+        return;
+    }
+
+    interpreter.interpret(statements, repl);
 }

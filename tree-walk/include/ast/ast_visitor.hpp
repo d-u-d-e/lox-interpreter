@@ -31,7 +31,7 @@ public:
         return parenthesize(expr.op.get_lexeme(), *expr.right.get());
     }
 
-    std::string print(const expr::ExprBase &expr)
+    std::string print(expr::ExprBase &expr)
     {
         return expr.accept(*this);
     }

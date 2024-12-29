@@ -97,11 +97,12 @@ namespace stmt
 
     struct Return : public StmtBase
     {
-        Return(std::shared_ptr<expr::ExprBase> &&value) : value(std::move(value)) {}
+        Return(const Token &keyword, std::shared_ptr<expr::ExprBase> &&value) : keyword(keyword), value(std::move(value)) {}
         void accept(Visitor<void> &visitor) override
         {
             visitor.visit_return_stmt(*this);
         }
+        Token keyword;
         std::shared_ptr<expr::ExprBase> value;
     };
 
