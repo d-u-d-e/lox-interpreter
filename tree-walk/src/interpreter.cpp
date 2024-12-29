@@ -201,7 +201,7 @@ bool Interpreter::is_truthy(const expr::Value &value)
     return true;
 }
 
-bool Interpreter::is_equal(const expr::Value &left, expr::Value &right)
+bool Interpreter::is_equal(const expr::Value &left, const expr::Value &right)
 {
     if (left.is_nil() && right.is_nil())
     {
@@ -305,13 +305,13 @@ std::string Interpreter::stringify(const expr::Value &value)
     return "???unknown???";
 }
 
-void Interpreter::visit_print_stmt(stmt::Print &stmt)
+void Interpreter::visit_print_stmt(const stmt::Print &stmt)
 {
     auto value = evaluate(*stmt.ex.get());
     std::cout << stringify(value) << std::endl;
 }
 
-void Interpreter::visit_expr_stmt(stmt::Expression &stmt)
+void Interpreter::visit_expr_stmt(const stmt::Expression &stmt)
 {
     show_exp = true;
     auto v = evaluate(*stmt.ex.get());
@@ -321,12 +321,12 @@ void Interpreter::visit_expr_stmt(stmt::Expression &stmt)
     }
 }
 
-expr::Value Interpreter::visit_variable_expr(const std::shared_ptr<expr::Variable> &expr)
+expr::Value Interpreter::visit_variable_expr(const std::shared_ptr<const expr::Variable> &expr)
 {
     return lookup_variable(expr->token, expr);
 }
 
-expr::Value Interpreter::visit_assignment_expr(const std::shared_ptr<expr::Assignment> &expr)
+expr::Value Interpreter::visit_assignment_expr(const std::shared_ptr<const expr::Assignment> &expr)
 {
     show_exp = false;
     auto value = evaluate(*expr->value);
@@ -389,7 +389,7 @@ expr::Value Interpreter::visit_call_expr(const expr::Call &expr)
     return callee.as<LoxFunction>().call(*this, args);
 }
 
-void Interpreter::visit_vardecl_stmt(stmt::VariableDecl &stmt)
+void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
 {
     // by default, if a variable declaration has no initializer, the value is nil
     show_exp = false;
@@ -402,12 +402,12 @@ void Interpreter::visit_vardecl_stmt(stmt::VariableDecl &stmt)
     environ->define(stmt.token.get_lexeme(), value);
 }
 
-void Interpreter::visit_block_stmt(stmt::Block &stmt)
+void Interpreter::visit_block_stmt(const stmt::Block &stmt)
 {
     execute_block(stmt.statements, std::make_unique<Environment>(environ));
 }
 
-void Interpreter::visit_if_stmt(stmt::If &stmt)
+void Interpreter::visit_if_stmt(const stmt::If &stmt)
 {
     if (is_truthy(evaluate(*stmt.condition)))
     {
@@ -419,7 +419,7 @@ void Interpreter::visit_if_stmt(stmt::If &stmt)
     }
 }
 
-void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
+void Interpreter::visit_while_stmt(const std::shared_ptr<const stmt::While> & stmt)
 {
     while (is_truthy(evaluate(*stmt->condition)))
     {
@@ -427,14 +427,13 @@ void Interpreter::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
     }
 }
 
-void Interpreter::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
+void Interpreter::visit_fun_stmt(const std::shared_ptr<const stmt::Function> & stmt)
 {
-    auto lexeme = stmt->name.get_lexeme();
-    LoxFunction func(std::move(stmt), environ);
-    environ->define(lexeme, func);
+    LoxFunction func(stmt, environ);
+    environ->define(stmt->name.get_lexeme(), func);
 }
 
-void Interpreter::visit_return_stmt(stmt::Return &stmt)
+void Interpreter::visit_return_stmt(const stmt::Return &stmt)
 {
     if (stmt.value != nullptr)
     {
@@ -479,7 +478,7 @@ void Interpreter::interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &
     }
 }
 
-expr::Value Interpreter::lookup_variable(const Token &name, const std::shared_ptr<expr::ExprBase> &expr)
+expr::Value Interpreter::lookup_variable(const Token &name, const std::shared_ptr<const expr::ExprBase> &expr)
 {
     if (locals.find(expr) == locals.end())
     {

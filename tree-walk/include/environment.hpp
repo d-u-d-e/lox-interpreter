@@ -7,7 +7,7 @@ class Environment
 {
 public:
     Environment() {}
-    Environment(std::shared_ptr<Environment> enclosing) : enclosing(enclosing) {}
+    Environment(std::shared_ptr<Environment> enclosing) : enclosing(std::move(enclosing)) {}
 
     void define(const std::string &name, const expr::Value &value);
     void assign(const Token &name, const expr::Value &value);

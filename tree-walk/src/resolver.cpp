@@ -48,7 +48,7 @@ void Resolver::visit_unary_expr(const expr::Unary &expr)
     resolve(expr.right);
 };
 
-void Resolver::visit_variable_expr(const std::shared_ptr<expr::Variable> &expr)
+void Resolver::visit_variable_expr(const std::shared_ptr<const expr::Variable> &expr)
 {
     auto &token = expr.get()->token;
     if (!scopes.empty())
@@ -62,7 +62,7 @@ void Resolver::visit_variable_expr(const std::shared_ptr<expr::Variable> &expr)
     resolve_local(expr, token);
 };
 
-void Resolver::visit_assignment_expr(const std::shared_ptr<expr::Assignment> &expr)
+void Resolver::visit_assignment_expr(const std::shared_ptr<const expr::Assignment> &expr)
 {
     resolve(expr->value);
     resolve_local(expr, expr->token);
@@ -83,17 +83,17 @@ void Resolver::visit_call_expr(const expr::Call &expr)
     }
 };
 
-void Resolver::visit_print_stmt(stmt::Print &stmt)
+void Resolver::visit_print_stmt(const stmt::Print &stmt)
 {
     resolve(stmt.ex);
 };
 
-void Resolver::visit_expr_stmt(stmt::Expression &stmt)
+void Resolver::visit_expr_stmt(const stmt::Expression &stmt)
 {
     resolve(stmt.ex);
 };
 
-void Resolver::visit_vardecl_stmt(stmt::VariableDecl &stmt)
+void Resolver::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
 {
     // variable exists but has not been initialized
     // a statement like var a = a; is a compile error, as 'a' is not ready
@@ -106,14 +106,14 @@ void Resolver::visit_vardecl_stmt(stmt::VariableDecl &stmt)
     define(stmt.token);
 };
 
-void Resolver::visit_block_stmt(stmt::Block &stmt)
+void Resolver::visit_block_stmt(const stmt::Block &stmt)
 {
     begin_scope();
     resolve(stmt.statements);
     end_scope();
 };
 
-void Resolver::visit_if_stmt(stmt::If &stmt)
+void Resolver::visit_if_stmt(const stmt::If &stmt)
 {
     resolve(stmt.condition);
     resolve(stmt.then_stm);
@@ -123,13 +123,13 @@ void Resolver::visit_if_stmt(stmt::If &stmt)
     }
 };
 
-void Resolver::visit_while_stmt(std::shared_ptr<stmt::While> stmt)
+void Resolver::visit_while_stmt(const std::shared_ptr<const stmt::While> & stmt)
 {
     resolve(stmt->condition);
     resolve(stmt->body);
 };
 
-void Resolver::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
+void Resolver::visit_fun_stmt(const std::shared_ptr<const stmt::Function> & stmt)
 {
     declare(stmt->name);
     define(stmt->name);
@@ -137,7 +137,7 @@ void Resolver::visit_fun_stmt(std::shared_ptr<stmt::Function> stmt)
     resolve_function(stmt, FunctionType::FUNCTION);
 };
 
-void Resolver::visit_return_stmt(stmt::Return &stmt)
+void Resolver::visit_return_stmt(const stmt::Return &stmt)
 {
     if (current_func == FunctionType::NONE)
     {
@@ -158,7 +158,7 @@ void Resolver::resolve(const std::vector<std::shared_ptr<stmt::StmtBase>> &state
     }
 }
 
-void Resolver::resolve_local(const std::shared_ptr<expr::ExprBase> &expr, const Token &token)
+void Resolver::resolve_local(const std::shared_ptr<const expr::ExprBase> &expr, const Token &token)
 {
     for (int i = scopes.size() - 1; i >= 0; i--)
     {
@@ -170,7 +170,7 @@ void Resolver::resolve_local(const std::shared_ptr<expr::ExprBase> &expr, const 
     } 
 }
 
-void Resolver::resolve_function(const std::shared_ptr<stmt::Function> &function, FunctionType type)
+void Resolver::resolve_function(const std::shared_ptr<const stmt::Function> &function, FunctionType type)
 {
     // used to resolve both functions and methods
 
