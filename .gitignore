@@ -33,3 +33,4 @@
 
 tree-walk/build
 .vscode/
+.clang-format
