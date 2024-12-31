@@ -49,6 +49,7 @@ namespace stmt
     T virtual visit_block_stmt(const Block &stmt) = 0;
     T virtual visit_if_stmt(const If &stmt) = 0;
     T virtual visit_while_stmt(const While &stmt) = 0;
+    // shared ptr required to save the function statement in the environment
     T virtual visit_fun_stmt(const std::shared_ptr<const Function> &stmt) = 0;
     T virtual visit_return_stmt(const Return &stmt) = 0;
   };
