@@ -18,4 +18,9 @@ print foo.b;
 
 var bar = Bar();
 bar.bar();
+bar.p = 5;
 
+var m = bar.bar;
+var p = bar.p;
+m();
+print p;
