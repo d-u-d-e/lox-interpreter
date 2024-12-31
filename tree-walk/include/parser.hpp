@@ -40,17 +40,18 @@ private:
   std::shared_ptr<expr::ExprBase> finish_call(std::shared_ptr<expr::ExprBase> callee);
   std::shared_ptr<expr::ExprBase> expression();
 
-  std::shared_ptr<stmt::StmtBase> print_statement();
-  std::shared_ptr<stmt::StmtBase> expr_statement(bool parse_semicolon_in_repl = true);
+  std::shared_ptr<stmt::Print> print_statement();
+  std::shared_ptr<stmt::Expression> expr_statement(bool parse_semicolon_in_repl = true);
   std::shared_ptr<stmt::StmtBase> declaration();
-  std::shared_ptr<stmt::StmtBase> var_declaration();
+  std::shared_ptr<stmt::VariableDecl> var_declaration();
   std::shared_ptr<stmt::StmtBase> statement();
   std::vector<std::shared_ptr<stmt::StmtBase>> block();
-  std::shared_ptr<stmt::StmtBase> if_statement();
-  std::shared_ptr<stmt::StmtBase> while_statement();
+  std::shared_ptr<stmt::If> if_statement();
+  std::shared_ptr<stmt::While> while_statement();
   std::shared_ptr<stmt::StmtBase> for_statement();
-  std::shared_ptr<stmt::StmtBase> function(std::string kind);
-  std::shared_ptr<stmt::StmtBase> return_statement();
+  std::shared_ptr<stmt::Function> function(std::string kind);
+  std::shared_ptr<stmt::Return> return_statement();
+  std::shared_ptr<stmt::Class> class_declaration();
 
   bool is_at_end() { return peek().get_type() == Token::TokenType::END_OF_FILE; }
 

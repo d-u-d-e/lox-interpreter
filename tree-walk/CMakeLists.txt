@@ -16,6 +16,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/environment.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/function.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/resolver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/class.cpp
 )
 
 target_include_directories(cpplox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

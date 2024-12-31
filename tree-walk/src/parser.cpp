@@ -197,14 +197,14 @@ std::shared_ptr<stmt::StmtBase> Parser::statement()
   return expr_statement(false);
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::print_statement()
+std::shared_ptr<stmt::Print> Parser::print_statement()
 {
   auto expr = expression();
   consume(Token::TokenType::SEMICOLON, "Expect ';' after value.");
   return std::make_shared<stmt::Print>(std::move(expr));
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::expr_statement(bool parse_semicolon_in_repl)
+std::shared_ptr<stmt::Expression> Parser::expr_statement(bool parse_semicolon_in_repl)
 {
   auto expr = expression();
   if(!repl || parse_semicolon_in_repl || peek().get_type() == Token::TokenType::SEMICOLON) {
@@ -222,6 +222,9 @@ std::shared_ptr<stmt::StmtBase> Parser::declaration()
     else if(match(Token::TokenType::FUN)) {
       return function("function");
     }
+    else if (match(Token::TokenType::CLASS)) {
+      return class_declaration();
+    }
     return statement();
   }
   catch(const ParseError &) {
@@ -230,7 +233,7 @@ std::shared_ptr<stmt::StmtBase> Parser::declaration()
   }
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::var_declaration()
+std::shared_ptr<stmt::VariableDecl> Parser::var_declaration()
 {
   Token name = consume(Token::TokenType::IDENTIFIER, "Expect variable name.");
   std::shared_ptr<expr::ExprBase> initializer{};
@@ -253,7 +256,7 @@ std::vector<std::shared_ptr<stmt::StmtBase>> Parser::block()
   return statements;
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::if_statement()
+std::shared_ptr<stmt::If> Parser::if_statement()
 {
   consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
   auto condition = expression();
@@ -267,7 +270,7 @@ std::shared_ptr<stmt::StmtBase> Parser::if_statement()
   return std::make_shared<stmt::If>(std::move(condition), std::move(then_stm), std::move(else_stm));
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::while_statement()
+std::shared_ptr<stmt::While> Parser::while_statement()
 {
   consume(Token::TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
   auto condition = expression();
@@ -326,7 +329,7 @@ std::shared_ptr<stmt::StmtBase> Parser::for_statement()
   return body;
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::function(std::string kind)
+std::shared_ptr<stmt::Function> Parser::function(std::string kind)
 {
   Token name = consume(Token::TokenType::IDENTIFIER, "Expect " + kind + " name.");
   consume(Token::TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
@@ -345,7 +348,7 @@ std::shared_ptr<stmt::StmtBase> Parser::function(std::string kind)
   return std::make_shared<stmt::Function>(name, params, std::move(body));
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::return_statement()
+std::shared_ptr<stmt::Return> Parser::return_statement()
 {
   auto keyword = previous();
   std::shared_ptr<expr::ExprBase> value = nullptr;
@@ -354,6 +357,20 @@ std::shared_ptr<stmt::StmtBase> Parser::return_statement()
   }
   consume(Token::TokenType::SEMICOLON, "Expect ';' after return value.");
   return std::make_shared<stmt::Return>(keyword, std::move(value));
+}
+
+std::shared_ptr<stmt::Class> Parser::class_declaration() 
+{
+  Token name = consume(Token::TokenType::IDENTIFIER, "Expect class name.");
+  consume(Token::TokenType::LEFT_BRACE, "Expect '{' before class body.");
+
+  std::vector<std::shared_ptr<stmt::Function>> methods;
+  while(!check(Token::TokenType::RIGHT_BRACE) && !is_at_end()) {
+    methods.push_back(function("method"));
+  }
+
+  consume(Token::TokenType::RIGHT_BRACE, "Expect '}' after class body.");
+  return std::make_shared<stmt::Class>(name, std::move(methods));
 }
 
 void Parser::synchronize()

@@ -3,6 +3,7 @@
 #include <lox.hpp>
 #include <memory>
 #include <return.hpp>
+#include <class.hpp>
 
 expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
 {
@@ -374,6 +375,12 @@ void Interpreter::visit_return_stmt(const stmt::Return &stmt)
   }
   // by default 'return;' returns nil
   throw Return(expr::Value());
+}
+
+void Interpreter::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
+{
+  auto klass = std::make_shared<LoxClass>(stmt->name.get_lexeme());
+  environ->define(stmt->name.get_lexeme(), expr::Value(klass));
 }
 
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts,

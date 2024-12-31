@@ -129,6 +129,13 @@ void Resolver::visit_return_stmt(const stmt::Return &stmt)
   }
 };
 
+void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
+{
+  declare(stmt->name);
+  // not uncommon to declare a class as a local variable
+  define(stmt->name);
+}
+
 void Resolver::resolve(const std::vector<std::shared_ptr<stmt::StmtBase>> &statements)
 {
   for(auto &stm : statements) {

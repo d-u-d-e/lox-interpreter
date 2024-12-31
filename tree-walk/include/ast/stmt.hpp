@@ -91,4 +91,13 @@ namespace stmt
     std::shared_ptr<expr::ExprBase> value;
   };
 
+  struct Class : public StmtBase, public std::enable_shared_from_this<const Class> {
+    Class(const Token &name, std::vector<std::shared_ptr<Function>> &&methods)
+        : name(name), methods(std::move(methods))
+    {}
+    void accept(Visitor<void> &visitor) const override { visitor.visit_class_stmt(shared_from_this()); }
+    Token name;
+    std::vector<std::shared_ptr<Function>> methods;
+  };
+
 } // namespace stmt
