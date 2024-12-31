@@ -35,7 +35,7 @@ public:
   void visit_vardecl_stmt(const stmt::VariableDecl &stmt) override;
   void visit_block_stmt(const stmt::Block &stmt) override;
   void visit_if_stmt(const stmt::If &stmt) override;
-  void visit_while_stmt(const std::shared_ptr<const stmt::While> &stmt) override;
+  void visit_while_stmt(const stmt::While &stmt) override;
   void visit_fun_stmt(const std::shared_ptr<const stmt::Function> &stmt) override;
   void visit_return_stmt(const stmt::Return &stmt) override;
 

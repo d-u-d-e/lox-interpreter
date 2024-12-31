@@ -56,13 +56,13 @@ namespace stmt
     std::shared_ptr<stmt::StmtBase> else_stm;
   };
 
-  struct While : public StmtBase, public std::enable_shared_from_this<const While> {
+  struct While : public StmtBase {
     While(std::shared_ptr<expr::ExprBase> &&condition, std::shared_ptr<stmt::StmtBase> &&body)
         : condition(std::move(condition)), body(std::move(body))
     {}
     void accept(Visitor<void> &visitor) const override
     {
-      visitor.visit_while_stmt(shared_from_this());
+      visitor.visit_while_stmt(*this);
     }
     std::shared_ptr<expr::ExprBase> condition;
     std::shared_ptr<stmt::StmtBase> body;

@@ -104,10 +104,10 @@ void Resolver::visit_if_stmt(const stmt::If &stmt)
   }
 };
 
-void Resolver::visit_while_stmt(const std::shared_ptr<const stmt::While> &stmt)
+void Resolver::visit_while_stmt(const stmt::While &stmt)
 {
-  resolve(stmt->condition);
-  resolve(stmt->body);
+  resolve(stmt.condition);
+  resolve(stmt.body);
 };
 
 void Resolver::visit_fun_stmt(const std::shared_ptr<const stmt::Function> &stmt)
