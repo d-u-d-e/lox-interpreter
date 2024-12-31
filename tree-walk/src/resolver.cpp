@@ -78,6 +78,13 @@ void Resolver::visit_get_expr(const expr::Get &expr)
   resolve(expr.object);
 }
 
+void Resolver::visit_set_expr(const expr::Set &expr)
+{
+  // properties are dynamic, so they don't get resolved
+  resolve(expr.value);
+  resolve(expr.object);
+}
+
 void Resolver::visit_print_stmt(const stmt::Print &stmt) { resolve(stmt.ex); };
 
 void Resolver::visit_expr_stmt(const stmt::Expression &stmt) { resolve(stmt.ex); };

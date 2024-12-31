@@ -200,4 +200,20 @@ namespace expr
     std::shared_ptr<ExprBase> object;
     Token name;
   };
+
+  struct Set : public ExprBase {
+    Set(std::shared_ptr<ExprBase> &&object, const Token &name, std::shared_ptr<ExprBase> &&value)
+        : object(std::move(object)), name(name), value(std::move(value))
+    {}
+    std::string accept(Visitor<std::string> &visitor) const override
+    {
+      return visitor.visit_set_expr(*this);
+    }
+    Value accept(Visitor<Value> &visitor) const override { return visitor.visit_set_expr(*this); }
+    void accept(Visitor<void> &visitor) const override { visitor.visit_set_expr(*this); }
+    std::shared_ptr<ExprBase> object;
+    Token name;
+    std::shared_ptr<ExprBase> value;
+  };
+
 } // namespace expr

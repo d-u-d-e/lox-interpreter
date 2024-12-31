@@ -396,6 +396,19 @@ expr::Value Interpreter::visit_get_expr(const expr::Get &expr)
   throw RuntimeError(expr.name, "Only instances have properties.");
 }
 
+expr::Value Interpreter::visit_set_expr(const expr::Set &expr) 
+{
+  show_exp = false;
+  auto object = evaluate(*expr.object);
+  if(object.is_instance()) {
+    auto & instance = object.as<std::shared_ptr<LoxInstance>>();
+    auto value = evaluate(*expr.value);
+    instance->set(expr.name, value);
+    return value;
+  }
+  throw RuntimeError(expr.name, "Only instances have fields.");
+}
+
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts,
                                 std::unique_ptr<Environment> env)
 {

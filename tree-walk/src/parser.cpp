@@ -97,6 +97,11 @@ std::shared_ptr<expr::ExprBase> Parser::assignment()
       auto &name = dynamic_cast<expr::Variable &>(*expr);
       return std::make_shared<expr::Assignment>(name.token, std::move(value));
     }
+    else if (typeid(*expr) == typeid(expr::Get)) {
+      auto &get = dynamic_cast<expr::Get &>(*expr);
+      // this is actually a set expression, so change the node type
+      return std::make_shared<expr::Set>(std::move(get.object), get.name, std::move(value));
+    }
     error(equals, "Invalid assignment target.");
   }
   return expr;

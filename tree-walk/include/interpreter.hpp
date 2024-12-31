@@ -31,6 +31,7 @@ public:
   expr::Value visit_logical_expr(const expr::Logical &expr) override;
   expr::Value visit_call_expr(const expr::Call &expr) override;
   expr::Value visit_get_expr(const expr::Get &expr) override;
+  expr::Value visit_set_expr(const expr::Set &expr) override;
 
   void visit_print_stmt(const stmt::Print &stmt) override;
   void visit_expr_stmt(const stmt::Expression &stmt) override;

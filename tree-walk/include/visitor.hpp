@@ -12,6 +12,7 @@ namespace expr
   class Logical;
   class Call;
   class Get;
+  class Set;
 
   template <typename T> class Visitor
   {
@@ -27,6 +28,7 @@ namespace expr
     T virtual visit_logical_expr(const Logical &expr) = 0;
     T virtual visit_call_expr(const Call &expr) = 0;
     T virtual visit_get_expr(const Get &expr) = 0;
+    T virtual visit_set_expr(const Set &expr) = 0;
   };
 }
 

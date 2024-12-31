@@ -1,0 +1,18 @@
+class Foo {
+
+}
+
+var foo = Foo();
+print foo;
+foo.a = "prop a";
+print foo.a;
+
+class Bar {
+
+}
+
+foo.b = Bar;
+print foo.b;
+foo.b = 2;
+print foo.b;
+
