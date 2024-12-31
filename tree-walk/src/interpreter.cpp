@@ -387,6 +387,15 @@ void Interpreter::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stm
   environ->define(stmt->name.get_lexeme(), expr::Value(klass));
 }
 
+expr::Value Interpreter::visit_get_expr(const expr::Get &expr)
+{
+  auto v = evaluate(*expr.object);
+  if(v.is_instance()) {
+    return v.as<std::shared_ptr<LoxInstance>>()->get(expr.name);
+  }
+  throw RuntimeError(expr.name, "Only instances have properties.");
+}
+
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts,
                                 std::unique_ptr<Environment> env)
 {

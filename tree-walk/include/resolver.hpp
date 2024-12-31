@@ -21,6 +21,7 @@ public:
   void visit_assignment_expr(const std::shared_ptr<const expr::Assignment> &expr) override;
   void visit_logical_expr(const expr::Logical &expr) override;
   void visit_call_expr(const expr::Call &expr) override;
+  void visit_get_expr(const expr::Get &expr) override;
 
   void visit_print_stmt(const stmt::Print &stmt) override;
   void visit_expr_stmt(const stmt::Expression &stmt) override;

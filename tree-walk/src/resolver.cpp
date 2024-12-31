@@ -72,6 +72,12 @@ void Resolver::visit_call_expr(const expr::Call &expr)
   }
 };
 
+void Resolver::visit_get_expr(const expr::Get &expr)
+{
+  // properties are dynamic, so they don't get resolved
+  resolve(expr.object);
+}
+
 void Resolver::visit_print_stmt(const stmt::Print &stmt) { resolve(stmt.ex); };
 
 void Resolver::visit_expr_stmt(const stmt::Expression &stmt) { resolve(stmt.ex); };
@@ -153,7 +159,8 @@ void Resolver::resolve_local(const std::shared_ptr<const expr::ExprBase> &expr, 
   }
 }
 
-void Resolver::resolve_function(const std::shared_ptr<const stmt::Function> &function, FunctionType type)
+void Resolver::resolve_function(const std::shared_ptr<const stmt::Function> &function,
+                                FunctionType type)
 {
   // used to resolve both functions and methods
 

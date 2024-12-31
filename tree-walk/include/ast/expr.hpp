@@ -20,7 +20,7 @@ namespace expr
     Value(std::shared_ptr<LoxInstance> i) : v(std::move(i)) {}
     Value() = default;
 
-    template <typename T> const T & as() const { return std::get<T>(v); }
+    template <typename T> const T &as() const { return std::get<T>(v); }
     template <typename T> T &as() { return std::get<T>(v); }
     bool is_string() const { return std::holds_alternative<std::string>(v); }
     bool is_double() const { return std::holds_alternative<double>(v); }
@@ -187,4 +187,17 @@ namespace expr
     std::shared_ptr<ExprBase> value;
   };
 
+  struct Get : public ExprBase {
+    Get(std::shared_ptr<ExprBase> &&object, const Token &name)
+        : object(std::move(object)), name(name)
+    {}
+    std::string accept(Visitor<std::string> &visitor) const override
+    {
+      return visitor.visit_get_expr(*this);
+    }
+    Value accept(Visitor<Value> &visitor) const override { return visitor.visit_get_expr(*this); }
+    void accept(Visitor<void> &visitor) const override { visitor.visit_get_expr(*this); }
+    std::shared_ptr<ExprBase> object;
+    Token name;
+  };
 } // namespace expr

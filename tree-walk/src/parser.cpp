@@ -131,6 +131,10 @@ std::shared_ptr<expr::ExprBase> Parser::call()
     if(match(Token::TokenType::LEFT_PAREN)) {
       expr = finish_call(std::move(expr));
     }
+    else if(match(Token::TokenType::DOT)) {
+      auto name = consume(Token::TokenType::IDENTIFIER, "Expect property name after '.'.");
+      expr = std::make_shared<expr::Get>(std::move(expr), name);
+    }
     else {
       break;
     }

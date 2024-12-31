@@ -11,6 +11,7 @@ namespace expr
   class Assignment;
   class Logical;
   class Call;
+  class Get;
 
   template <typename T> class Visitor
   {
@@ -25,6 +26,7 @@ namespace expr
     T virtual visit_assignment_expr(const std::shared_ptr<const expr::Assignment> &expr) = 0;
     T virtual visit_logical_expr(const Logical &expr) = 0;
     T virtual visit_call_expr(const Call &expr) = 0;
+    T virtual visit_get_expr(const Get &expr) = 0;
   };
 }
 
