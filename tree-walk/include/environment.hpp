@@ -10,6 +10,7 @@ public:
   Environment(std::shared_ptr<Environment> enclosing) : enclosing(std::move(enclosing)) {}
 
   void define(const std::string &name, const expr::Value &value);
+  void define(const std::string &name, expr::Value &&value);
   void assign(const Token &name, const expr::Value &value);
   void assign_at(int distance, const std::string &name, const expr::Value &value);
   expr::Value get(const Token &name) const;

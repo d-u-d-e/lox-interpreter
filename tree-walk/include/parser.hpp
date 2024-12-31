@@ -41,7 +41,7 @@ private:
   std::shared_ptr<expr::ExprBase> expression();
 
   std::shared_ptr<stmt::StmtBase> print_statement();
-  std::shared_ptr<stmt::StmtBase> expr_statement();
+  std::shared_ptr<stmt::StmtBase> expr_statement(bool parse_semicolon_in_repl = true);
   std::shared_ptr<stmt::StmtBase> declaration();
   std::shared_ptr<stmt::StmtBase> var_declaration();
   std::shared_ptr<stmt::StmtBase> statement();

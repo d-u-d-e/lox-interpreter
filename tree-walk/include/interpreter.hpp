@@ -12,6 +12,7 @@ public:
   {
     globals = std::make_shared<Environment>();
     environ = globals;
+    define_native_functions();
   }
 
   struct RuntimeError : public std::runtime_error {
@@ -57,6 +58,7 @@ private:
   expr::Value evaluate(expr::ExprBase &expr) { return expr.accept(*this); }
   void execute(const std::shared_ptr<const stmt::StmtBase> &stmt) { return stmt->accept(*this); }
   expr::Value lookup_variable(const Token &name, const std::shared_ptr<const expr::ExprBase> &expr);
+  void define_native_functions();
 
   // distance map updated by resolver
   std::unordered_map<std::shared_ptr<const expr::ExprBase>, int> locals;

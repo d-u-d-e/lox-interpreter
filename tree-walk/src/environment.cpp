@@ -40,6 +40,11 @@ void Environment::define(const std::string &name, const expr::Value &value)
   values[name] = value;
 }
 
+void Environment::define(const std::string &name, expr::Value &&value) 
+{
+  values.insert_or_assign(name, std::move(value));
+}
+
 void Environment::assign(const Token &name, const expr::Value &value)
 {
   if(values.find(name.get_lexeme()) != values.end()) {

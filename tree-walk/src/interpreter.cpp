@@ -1,3 +1,4 @@
+#include <chrono>
 #include <interpreter.hpp>
 #include <lox.hpp>
 #include <memory>
@@ -249,7 +250,7 @@ std::string Interpreter::stringify(const expr::Value &value)
     return value.as<bool>() ? "true" : "false";
   }
   else if(value.is_callable()) {
-    return value.as<LoxFunction>().to_string();
+    return value.as<std::shared_ptr<LoxCallable>>()->to_string();
   }
   return "???unknown???";
 }
@@ -318,15 +319,12 @@ expr::Value Interpreter::visit_call_expr(const expr::Call &expr)
     throw RuntimeError(expr.paren, "Can only call functions and classes.");
   }
 
-  // probably this has to be reworked to handle object construction
-  auto &func = callee.as<LoxFunction>();
-
+  auto &func = *callee.as<std::shared_ptr<LoxCallable>>();
   if(func.arity() != args.size()) {
     throw RuntimeError(expr.paren, "Expected " + std::to_string(func.arity())
                                      + " arguments but got " + std::to_string(args.size()));
   }
-
-  return callee.as<LoxFunction>().call(*this, args);
+  return func.call(*this, args);
 }
 
 void Interpreter::visit_vardecl_stmt(const stmt::VariableDecl &stmt)
@@ -365,8 +363,8 @@ void Interpreter::visit_while_stmt(const stmt::While &stmt)
 
 void Interpreter::visit_fun_stmt(const std::shared_ptr<const stmt::Function> &stmt)
 {
-  LoxFunction func(stmt, environ);
-  environ->define(stmt->name.get_lexeme(), func);
+  auto func = std::make_shared<LoxFunction>(stmt, environ);
+  environ->define(stmt->name.get_lexeme(), expr::Value(func));
 }
 
 void Interpreter::visit_return_stmt(const stmt::Return &stmt)
@@ -416,4 +414,23 @@ expr::Value Interpreter::lookup_variable(const Token &name, const std::shared_pt
   else {
     return environ->get(name);
   }
+}
+
+void Interpreter::define_native_functions()
+{
+  class NativeFunctionClock : public LoxCallable
+  {
+    expr::Value call(Interpreter &interpreter, const std::vector<expr::Value> &args) override
+    {
+      const auto now = std::chrono::system_clock::now();
+      long long milliseconds_since_epoch
+        = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+      return expr::Value(milliseconds_since_epoch);
+    }
+    int arity() const override { return 0; }
+    std::string to_string() const override { return "<native fn>"; }
+  };
+
+  auto f = std::make_shared<NativeFunctionClock>();
+  globals->define("clock", expr::Value(f));
 }

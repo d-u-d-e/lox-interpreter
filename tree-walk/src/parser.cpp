@@ -194,7 +194,7 @@ std::shared_ptr<stmt::StmtBase> Parser::statement()
   else if(match(Token::TokenType::IF)) {
     return if_statement();
   }
-  return expr_statement();
+  return expr_statement(false);
 }
 
 std::shared_ptr<stmt::StmtBase> Parser::print_statement()
@@ -204,10 +204,10 @@ std::shared_ptr<stmt::StmtBase> Parser::print_statement()
   return std::make_shared<stmt::Print>(std::move(expr));
 }
 
-std::shared_ptr<stmt::StmtBase> Parser::expr_statement()
+std::shared_ptr<stmt::StmtBase> Parser::expr_statement(bool parse_semicolon_in_repl)
 {
   auto expr = expression();
-  if(!repl || peek().get_type() == Token::TokenType::SEMICOLON) {
+  if(!repl || parse_semicolon_in_repl || peek().get_type() == Token::TokenType::SEMICOLON) {
     consume(Token::TokenType::SEMICOLON, "Expect ';' after expression.");
   }
   return std::make_shared<stmt::Expression>(std::move(expr));

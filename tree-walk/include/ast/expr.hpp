@@ -15,7 +15,7 @@ namespace expr
     Value(double d) : v(d) {}
     Value(long long i) : v(i) {}
     Value(bool b) : v(b) {}
-    Value(LoxFunction f) : v(f) {}
+    Value(std::shared_ptr<LoxCallable> f) : v(std::move(f)) {}
     Value() = default;
 
     template <typename T> T as() const { return std::get<T>(v); }
@@ -25,9 +25,9 @@ namespace expr
     bool is_bool() const { return std::holds_alternative<bool>(v); }
     bool is_int() const { return std::holds_alternative<long long>(v); }
     bool is_nil() const { return std::holds_alternative<std::monostate>(v); }
-    bool is_callable() const { return std::holds_alternative<LoxFunction>(v); };
+    bool is_callable() const { return std::holds_alternative<std::shared_ptr<LoxCallable>>(v); };
     bool is_number() const { return is_double() || is_int(); }
-    std::variant<std::monostate, std::string, double, bool, long long, LoxFunction> v{};
+    std::variant<std::monostate, std::string, double, bool, long long, std::shared_ptr<LoxCallable>> v{};
   };
 
   class ExprBase
