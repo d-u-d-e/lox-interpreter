@@ -1,0 +1,9 @@
+class Foo {
+    foo() {print "method foo";}
+}
+
+var f = Foo();
+f.foo();
+// properties shadow methods
+f.foo = 2;
+print f.foo;
