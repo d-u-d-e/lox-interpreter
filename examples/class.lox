@@ -8,11 +8,14 @@ foo.a = "prop a";
 print foo.a;
 
 class Bar {
-
+    bar() { print "method bar() of class Bar";}
 }
 
 foo.b = Bar;
 print foo.b;
 foo.b = 2;
 print foo.b;
+
+var bar = Bar();
+bar.bar();
 

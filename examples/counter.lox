@@ -12,3 +12,4 @@ fun makeCounter()
 var counter = makeCounter();
 counter();
 counter();
+counter();

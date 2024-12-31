@@ -40,6 +40,7 @@ private:
   enum class FunctionType {
     NONE,
     FUNCTION,
+    METHOD
   };
 
   std::vector<std::unordered_map<std::string, bool>> scopes;
