@@ -1,6 +1,7 @@
 #pragma once
 
 #include <function.hpp>
+#include <instance.hpp>
 #include <memory>
 #include <token.hpp>
 #include <visitor.hpp>
@@ -16,9 +17,10 @@ namespace expr
     Value(long long i) : v(i) {}
     Value(bool b) : v(b) {}
     Value(std::shared_ptr<LoxCallable> f) : v(std::move(f)) {}
+    Value(std::shared_ptr<LoxInstance> i) : v(std::move(i)) {}
     Value() = default;
 
-    template <typename T> T as() const { return std::get<T>(v); }
+    template <typename T> const T & as() const { return std::get<T>(v); }
     template <typename T> T &as() { return std::get<T>(v); }
     bool is_string() const { return std::holds_alternative<std::string>(v); }
     bool is_double() const { return std::holds_alternative<double>(v); }
@@ -26,8 +28,11 @@ namespace expr
     bool is_int() const { return std::holds_alternative<long long>(v); }
     bool is_nil() const { return std::holds_alternative<std::monostate>(v); }
     bool is_callable() const { return std::holds_alternative<std::shared_ptr<LoxCallable>>(v); };
+    bool is_instance() const { return std::holds_alternative<std::shared_ptr<LoxInstance>>(v); };
     bool is_number() const { return is_double() || is_int(); }
-    std::variant<std::monostate, std::string, double, bool, long long, std::shared_ptr<LoxCallable>> v{};
+    std::variant<std::monostate, std::string, double, bool, long long, std::shared_ptr<LoxCallable>,
+                 std::shared_ptr<LoxInstance>>
+      v{};
   };
 
   class ExprBase
@@ -58,7 +63,8 @@ namespace expr
   };
 
   struct Call : public ExprBase {
-    Call(std::shared_ptr<ExprBase> &&callee, const Token &paren, std::vector<std::shared_ptr<ExprBase>> &&arguments)
+    Call(std::shared_ptr<ExprBase> &&callee, const Token &paren,
+         std::vector<std::shared_ptr<ExprBase>> &&arguments)
         : callee(std::move(callee)), paren(paren), arguments(std::move(arguments))
     {}
     std::string accept(Visitor<std::string> &visitor) const override

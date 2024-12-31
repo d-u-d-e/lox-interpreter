@@ -1,9 +1,9 @@
 #include <chrono>
+#include <class.hpp>
 #include <interpreter.hpp>
 #include <lox.hpp>
 #include <memory>
 #include <return.hpp>
-#include <class.hpp>
 
 expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
 {
@@ -225,7 +225,8 @@ void Interpreter::check_number_operand(const Token &op, const expr::Value &opera
   throw RuntimeError(op, "Operand must be a number.");
 }
 
-void Interpreter::check_number_operands(const Token &op, const expr::Value &left, const expr::Value &right)
+void Interpreter::check_number_operands(const Token &op, const expr::Value &left,
+                                        const expr::Value &right)
 {
   if(left.is_number() && right.is_number()) {
     return;
@@ -252,6 +253,9 @@ std::string Interpreter::stringify(const expr::Value &value)
   }
   else if(value.is_callable()) {
     return value.as<std::shared_ptr<LoxCallable>>()->to_string();
+  }
+  else if(value.is_instance()) {
+    return value.as<std::shared_ptr<LoxInstance>>()->to_string();
   }
   return "???unknown???";
 }
@@ -413,7 +417,8 @@ void Interpreter::interpret(const std::vector<std::shared_ptr<stmt::StmtBase>> &
   }
 }
 
-expr::Value Interpreter::lookup_variable(const Token &name, const std::shared_ptr<const expr::ExprBase> &expr)
+expr::Value Interpreter::lookup_variable(const Token &name,
+                                         const std::shared_ptr<const expr::ExprBase> &expr)
 {
   if(locals.find(expr) == locals.end()) {
     return globals->get(name);

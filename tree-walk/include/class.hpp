@@ -8,7 +8,7 @@ namespace stmt
   class Class;
 };
 
-class LoxClass : public LoxCallable
+class LoxClass : public LoxCallable, public std::enable_shared_from_this<LoxClass>
 {
 public:
   LoxClass(const std::string &name) : name(name) {}
