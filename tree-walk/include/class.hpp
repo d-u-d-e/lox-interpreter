@@ -17,7 +17,7 @@ public:
       : name(name), methods(std::move(methods))
   {}
   std::string to_string() const { return name; }
-  int arity() const override { return 0; }
+  int arity() const override;
   expr::Value call(Interpreter &interpreter, const std::vector<expr::Value> &args) override;
   std::shared_ptr<LoxFunction> find_method(const std::string &name) const;
 

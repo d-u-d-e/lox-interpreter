@@ -41,6 +41,7 @@ private:
   enum class FunctionType {
     NONE,
     FUNCTION,
+    INITIALIZER,
     METHOD
   };
 

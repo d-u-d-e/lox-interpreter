@@ -87,7 +87,7 @@ void Resolver::visit_set_expr(const expr::Set &expr)
 
 void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr)
 {
-  if (current_class == ClassType::NONE) {
+  if(current_class == ClassType::NONE) {
     Lox::error(expr->token, "Can't use 'this' outside of a class.");
     return;
   }
@@ -148,7 +148,13 @@ void Resolver::visit_return_stmt(const stmt::Return &stmt)
     Lox::error(stmt.keyword, "Can't return from top-level code.");
   }
 
+  // do not allow returning a value from an initializer
+  // allow 'return;' only
+
   if(stmt.value != nullptr) {
+    if(current_func == FunctionType::INITIALIZER) {
+      Lox::error(stmt.keyword, "Can't return a value from an initializer.");
+    }
     resolve(stmt.value);
   }
 };
@@ -167,7 +173,9 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
   scopes.back()["this"] = true;
 
   for(auto &method : stmt->methods) {
-    resolve_function(method, FunctionType::METHOD);
+    auto func_type
+      = method->name.get_lexeme() == "init" ? FunctionType::INITIALIZER : FunctionType::METHOD;
+    resolve_function(method, func_type);
   }
   end_scope();
 

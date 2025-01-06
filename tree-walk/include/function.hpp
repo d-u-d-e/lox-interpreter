@@ -12,8 +12,8 @@ namespace stmt
 class LoxFunction : public LoxCallable
 {
 public:
-  LoxFunction(std::shared_ptr<const stmt::Function> decl, std::shared_ptr<Environment> closure)
-      : declaration(std::move(decl)), closure(std::move(closure))
+  LoxFunction(std::shared_ptr<const stmt::Function> decl, std::shared_ptr<Environment> closure, bool is_initializer)
+      : declaration(std::move(decl)), closure(std::move(closure)), is_initializer(is_initializer)
   {}
   expr::Value call(Interpreter &interpreter, const std::vector<expr::Value> &args) override;
   int arity() const override;
@@ -23,4 +23,5 @@ public:
 private:
   std::shared_ptr<const stmt::Function> declaration;
   std::shared_ptr<Environment> closure;
+  bool is_initializer;
 };

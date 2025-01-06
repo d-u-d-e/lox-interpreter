@@ -371,7 +371,7 @@ void Interpreter::visit_while_stmt(const stmt::While &stmt)
 
 void Interpreter::visit_fun_stmt(const std::shared_ptr<const stmt::Function> &stmt)
 {
-  auto func = std::make_shared<LoxFunction>(stmt, environ);
+  auto func = std::make_shared<LoxFunction>(stmt, environ, false);
   environ->define(stmt->name.get_lexeme(), expr::Value(func));
 }
 
@@ -389,7 +389,8 @@ void Interpreter::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stm
   std::unordered_map<std::string, std::shared_ptr<LoxFunction>> methods;
   for(auto &method : stmt->methods) {
     // each method is turned into the runtime representation
-    methods[method->name.get_lexeme()] = std::make_shared<LoxFunction>(method, environ);
+    auto lexeme = method->name.get_lexeme();
+    methods[lexeme] = std::make_shared<LoxFunction>(method, environ, lexeme == "init");
   }
 
   auto klass = std::make_shared<LoxClass>(stmt->name.get_lexeme(), std::move(methods));
