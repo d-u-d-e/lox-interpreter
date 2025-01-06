@@ -15,11 +15,10 @@ public:
   void assign_at(int distance, const std::string &name, const expr::Value &value);
   expr::Value get(const Token &name) const;
   expr::Value get_at(int distance, const std::string &name) const;
+  std::shared_ptr<Environment> enclosing{};
 
 private:
   const Environment *ancestor(int distance) const;
   Environment *ancestor(int distance);
-
-  std::shared_ptr<Environment> enclosing{};
   std::unordered_map<std::string, expr::Value> values;
 };

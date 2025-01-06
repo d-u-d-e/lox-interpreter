@@ -33,6 +33,7 @@ public:
   expr::Value visit_get_expr(const expr::Get &expr) override;
   expr::Value visit_set_expr(const expr::Set &expr) override;
   expr::Value visit_this_expr(const std::shared_ptr<const expr::This> &expr) override;
+  expr::Value visit_super_expr(const std::shared_ptr<const expr::Super> &expr) override;
 
   void visit_print_stmt(const stmt::Print &stmt) override;
   void visit_expr_stmt(const stmt::Expression &stmt) override;

@@ -96,6 +96,11 @@ void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr)
   resolve_local(expr, expr->token);
 }
 
+void Resolver::visit_super_expr(const std::shared_ptr<const expr::Super> &expr)
+{
+  resolve_local(expr, expr->keyword);
+}
+
 void Resolver::visit_print_stmt(const stmt::Print &stmt) { resolve(stmt.ex); };
 
 void Resolver::visit_expr_stmt(const stmt::Expression &stmt) { resolve(stmt.ex); };
@@ -169,13 +174,18 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
   define(stmt->name);
 
   // a class can't inherit from itself
-  if (stmt->superclass != nullptr && stmt->name.get_lexeme() == stmt->superclass->token.get_lexeme()) {
+  if(stmt->superclass != nullptr
+     && stmt->name.get_lexeme() == stmt->superclass->token.get_lexeme()) {
     Lox::error(stmt->superclass->token, "A class can't inherit from itself.");
   }
 
   // resolve the superclass
-  if (stmt->superclass != nullptr){
+  if(stmt->superclass != nullptr) {
     resolve(stmt->superclass);
+    // if the class decl has a superclass, we create a scope for it sorrouding all of its methods,
+    // where we define `super`
+    begin_scope();
+    scopes.back()["super"] = true;
   }
 
   // make `this` visible to the function bodies
@@ -188,7 +198,12 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
       = method->name.get_lexeme() == "init" ? FunctionType::INITIALIZER : FunctionType::METHOD;
     resolve_function(method, func_type);
   }
-  end_scope();
+
+  end_scope(); // `this` is no longer visible
+
+  if(stmt->superclass != nullptr){
+    end_scope(); // `super` is no longer visible
+  }
 
   current_class = enclosing;
 }

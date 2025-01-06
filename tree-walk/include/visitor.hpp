@@ -14,6 +14,7 @@ namespace expr
   class Get;
   class Set;
   class This;
+  class Super;
 
   template <typename T> class Visitor
   {
@@ -31,6 +32,7 @@ namespace expr
     T virtual visit_get_expr(const Get &expr) = 0;
     T virtual visit_set_expr(const Set &expr) = 0;
     T virtual visit_this_expr(const std::shared_ptr<const This> &expr) = 0;
+    T virtual visit_super_expr(const std::shared_ptr<const Super> &expr) = 0;
   };
 }
 

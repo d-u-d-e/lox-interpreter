@@ -233,4 +233,22 @@ namespace expr
     Token token;
   };
 
+  struct Super : public ExprBase, public std::enable_shared_from_this<const Super> {
+    Super(const Token &keyword, const Token &method) : keyword(keyword), method(method) {}
+    std::string accept(Visitor<std::string> &visitor) const override
+    {
+      return visitor.visit_super_expr(shared_from_this());
+    }
+    Value accept(Visitor<Value> &visitor) const override
+    {
+      return visitor.visit_super_expr(shared_from_this());
+    }
+    void accept(Visitor<void> &visitor) const override
+    {
+      visitor.visit_super_expr(shared_from_this());
+    }
+    Token keyword;
+    Token method;
+  };
+
 } // namespace expr
