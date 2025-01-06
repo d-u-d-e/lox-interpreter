@@ -1,0 +1,17 @@
+class Doughnut {
+    cook(){
+        print "Fry until golden brown.";
+    }
+}
+
+class BostonCream < Doughnut {}
+
+BostonCream().cook();
+
+//var a = 2;
+//class Foo < a {} 
+
+fun foo() {
+    return 0;
+}
+class Foo < foo {}

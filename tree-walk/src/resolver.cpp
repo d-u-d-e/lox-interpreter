@@ -168,10 +168,21 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
   // not uncommon to declare a class as a local variable
   define(stmt->name);
 
+  // a class can't inherit from itself
+  if (stmt->superclass != nullptr && stmt->name.get_lexeme() == stmt->superclass->token.get_lexeme()) {
+    Lox::error(stmt->superclass->token, "A class can't inherit from itself.");
+  }
+
+  // resolve the superclass
+  if (stmt->superclass != nullptr){
+    resolve(stmt->superclass);
+  }
+
   // make `this` visible to the function bodies
   begin_scope();
   scopes.back()["this"] = true;
 
+  // resolve the methods
   for(auto &method : stmt->methods) {
     auto func_type
       = method->name.get_lexeme() == "init" ? FunctionType::INITIALIZER : FunctionType::METHOD;

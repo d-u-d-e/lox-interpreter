@@ -1,6 +1,7 @@
 #include <class.hpp>
 #include <instance.hpp>
 #include <interpreter.hpp>
+#include <ast/expr.hpp>
 
 expr::Value LoxClass::call(Interpreter &interpreter, const std::vector<expr::Value> &args)
 {
@@ -18,6 +19,13 @@ std::shared_ptr<LoxFunction> LoxClass::find_method(const std::string &name) cons
   if(methods.find(name) != methods.end()) {
     return methods.at(name);
   }
+
+  // else look in the superclass
+
+  if(superclass != nullptr) {
+    return superclass->find_method(name);
+  }
+  
   return nullptr;
 }
 

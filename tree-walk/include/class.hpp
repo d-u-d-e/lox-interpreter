@@ -13,8 +13,8 @@ namespace stmt
 class LoxClass : public LoxCallable, public std::enable_shared_from_this<LoxClass>
 {
 public:
-  LoxClass(const std::string &name, std::unordered_map<std::string, std::shared_ptr<LoxFunction>> &&methods)
-      : name(name), methods(std::move(methods))
+  LoxClass(const std::string &name, std::shared_ptr<const LoxClass> && superclass, std::unordered_map<std::string, std::shared_ptr<LoxFunction>> &&methods)
+      : name(name), superclass(std::move(superclass)), methods(std::move(methods))
   {}
   std::string to_string() const { return name; }
   int arity() const override;
@@ -23,5 +23,6 @@ public:
 
 private:
   std::string name;
+  std::shared_ptr<const LoxClass> superclass;
   std::unordered_map<std::string, std::shared_ptr<LoxFunction>> methods;
 };

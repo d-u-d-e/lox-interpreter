@@ -374,6 +374,13 @@ std::shared_ptr<stmt::Return> Parser::return_statement()
 std::shared_ptr<stmt::Class> Parser::class_declaration()
 {
   Token name = consume(Token::TokenType::IDENTIFIER, "Expect class name.");
+  std::shared_ptr<expr::Variable> superclass{};
+
+  if(match(Token::TokenType::LESS)) {
+    consume(Token::TokenType::IDENTIFIER, "Expect superclass name.");
+    superclass = std::make_shared<expr::Variable>(previous());
+  }
+
   consume(Token::TokenType::LEFT_BRACE, "Expect '{' before class body.");
 
   std::vector<std::shared_ptr<stmt::Function>> methods;
@@ -382,7 +389,7 @@ std::shared_ptr<stmt::Class> Parser::class_declaration()
   }
 
   consume(Token::TokenType::RIGHT_BRACE, "Expect '}' after class body.");
-  return std::make_shared<stmt::Class>(name, std::move(methods));
+  return std::make_shared<stmt::Class>(name, std::move(superclass), std::move(methods));
 }
 
 void Parser::synchronize()

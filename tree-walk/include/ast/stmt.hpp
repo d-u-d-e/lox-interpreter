@@ -48,7 +48,8 @@ namespace stmt
   struct If : public StmtBase {
     If(std::shared_ptr<expr::ExprBase> &&condition, std::shared_ptr<stmt::StmtBase> &&then_stm,
        std::shared_ptr<stmt::StmtBase> &&else_stm)
-        : condition(std::move(condition)), then_stm(std::move(then_stm)), else_stm(std::move(else_stm))
+        : condition(std::move(condition)), then_stm(std::move(then_stm)),
+          else_stm(std::move(else_stm))
     {}
     void accept(Visitor<void> &visitor) const override { visitor.visit_if_stmt(*this); }
     std::shared_ptr<expr::ExprBase> condition;
@@ -60,10 +61,7 @@ namespace stmt
     While(std::shared_ptr<expr::ExprBase> &&condition, std::shared_ptr<stmt::StmtBase> &&body)
         : condition(std::move(condition)), body(std::move(body))
     {}
-    void accept(Visitor<void> &visitor) const override
-    {
-      visitor.visit_while_stmt(*this);
-    }
+    void accept(Visitor<void> &visitor) const override { visitor.visit_while_stmt(*this); }
     std::shared_ptr<expr::ExprBase> condition;
     std::shared_ptr<stmt::StmtBase> body;
   };
@@ -92,11 +90,16 @@ namespace stmt
   };
 
   struct Class : public StmtBase, public std::enable_shared_from_this<const Class> {
-    Class(const Token &name, std::vector<std::shared_ptr<Function>> &&methods)
-        : name(name), methods(std::move(methods))
+    Class(const Token &name, std::shared_ptr<expr::Variable> && superclass,
+          std::vector<std::shared_ptr<Function>> &&methods)
+        : name(name), superclass(std::move(superclass)), methods(std::move(methods))
     {}
-    void accept(Visitor<void> &visitor) const override { visitor.visit_class_stmt(shared_from_this()); }
+    void accept(Visitor<void> &visitor) const override
+    {
+      visitor.visit_class_stmt(shared_from_this());
+    }
     Token name;
+    std::shared_ptr<expr::Variable> superclass;
     std::vector<std::shared_ptr<Function>> methods;
   };
 

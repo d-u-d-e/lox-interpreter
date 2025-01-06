@@ -386,6 +386,17 @@ void Interpreter::visit_return_stmt(const stmt::Return &stmt)
 
 void Interpreter::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
 {
+  // validate the superclass if any
+  std::shared_ptr<const LoxClass> superclass{};
+  if(stmt->superclass != nullptr) {
+    auto super = evaluate(*stmt->superclass);
+    if(!super.is_callable()
+       || typeid(*super.as<std::shared_ptr<LoxCallable>>()) != typeid(LoxClass)) {
+      throw RuntimeError(stmt->superclass->token, "Superclass must be a class.");
+    }
+    superclass = std::dynamic_pointer_cast<const LoxClass>(super.as<std::shared_ptr<LoxCallable>>());
+  }
+
   std::unordered_map<std::string, std::shared_ptr<LoxFunction>> methods;
   for(auto &method : stmt->methods) {
     // each method is turned into the runtime representation
@@ -393,7 +404,7 @@ void Interpreter::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stm
     methods[lexeme] = std::make_shared<LoxFunction>(method, environ, lexeme == "init");
   }
 
-  auto klass = std::make_shared<LoxClass>(stmt->name.get_lexeme(), std::move(methods));
+  auto klass = std::make_shared<LoxClass>(stmt->name.get_lexeme(), std::move(superclass), std::move(methods));
   environ->define(stmt->name.get_lexeme(), expr::Value(klass));
 }
 
