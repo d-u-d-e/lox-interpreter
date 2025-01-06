@@ -3,6 +3,7 @@
 #include <memory>
 
 class Environment;
+class LoxInstance;
 namespace stmt
 {
   class Function;
@@ -17,6 +18,7 @@ public:
   expr::Value call(Interpreter &interpreter, const std::vector<expr::Value> &args) override;
   int arity() const override;
   std::string to_string() const override;
+  std::shared_ptr<LoxFunction> bind(const std::shared_ptr<LoxInstance> &instance);
 
 private:
   std::shared_ptr<const stmt::Function> declaration;

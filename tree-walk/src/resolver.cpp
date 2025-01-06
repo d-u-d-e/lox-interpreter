@@ -9,7 +9,7 @@ void Resolver::declare(const Token &token)
   }
 
   // we are in a local scope
-  auto &scope_top = scopes.at(scopes.size() - 1);
+  auto &scope_top = scopes.back();
   auto lexeme = token.get_lexeme();
   if(scope_top.find(lexeme) != scope_top.end()) {
     Lox::error(token, "Already a variable with this name in this scope.");
@@ -23,7 +23,7 @@ void Resolver::define(const Token &token)
   if(scopes.empty())
     return;
   // mark the variable as ready
-  scopes.at(scopes.size() - 1).at(token.get_lexeme()) = true;
+  scopes.back()[token.get_lexeme()] = true;
 }
 
 void Resolver::visit_binary_expr(const expr::Binary &expr)
@@ -44,7 +44,7 @@ void Resolver::visit_variable_expr(const std::shared_ptr<const expr::Variable> &
 {
   auto &token = expr.get()->token;
   if(!scopes.empty()) {
-    auto &scope_top = scopes.at(scopes.size() - 1);
+    auto &scope_top = scopes.back();
     if(scope_top.find(token.get_lexeme()) != scope_top.end() && !scope_top[token.get_lexeme()]) {
       Lox::error(token, "Can't read local variable in its own initializer");
     }
@@ -83,6 +83,12 @@ void Resolver::visit_set_expr(const expr::Set &expr)
   // properties are dynamic, so they don't get resolved
   resolve(expr.value);
   resolve(expr.object);
+}
+
+void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr) 
+{
+  // treated as a normal variable
+  resolve_local(expr, expr->token);
 }
 
 void Resolver::visit_print_stmt(const stmt::Print &stmt) { resolve(stmt.ex); };
@@ -148,9 +154,14 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
   // not uncommon to declare a class as a local variable
   define(stmt->name);
 
-  for (auto &method : stmt->methods) {
+  // make `this` visible to the function bodies
+  begin_scope();
+  scopes.back()["this"] = true;
+
+  for(auto &method : stmt->methods) {
     resolve_function(method, FunctionType::METHOD);
   }
+  end_scope();
 }
 
 void Resolver::resolve(const std::vector<std::shared_ptr<stmt::StmtBase>> &statements)

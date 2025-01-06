@@ -13,6 +13,7 @@ namespace expr
   class Call;
   class Get;
   class Set;
+  class This;
 
   template <typename T> class Visitor
   {
@@ -24,11 +25,12 @@ namespace expr
     T virtual visit_unary_expr(const Unary &expr) = 0;
     // shared ptr required to resolve a variable by ptr value
     T virtual visit_variable_expr(const std::shared_ptr<const Variable> &expr) = 0;
-    T virtual visit_assignment_expr(const std::shared_ptr<const expr::Assignment> &expr) = 0;
+    T virtual visit_assignment_expr(const std::shared_ptr<const Assignment> &expr) = 0;
     T virtual visit_logical_expr(const Logical &expr) = 0;
     T virtual visit_call_expr(const Call &expr) = 0;
     T virtual visit_get_expr(const Get &expr) = 0;
     T virtual visit_set_expr(const Set &expr) = 0;
+    T virtual visit_this_expr(const std::shared_ptr<const This> &expr) = 0;
   };
 }
 

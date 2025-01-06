@@ -80,6 +80,9 @@ std::shared_ptr<expr::ExprBase> Parser::primary()
     consume(Token::TokenType::RIGHT_PAREN, "Expect ')' after expression.");
     return std::make_shared<expr::Grouping>(std::move(expr));
   }
+  else if(match(Token::TokenType::THIS)) {
+    return std::make_shared<expr::This>(previous());
+  }
   throw error(peek(), "Expect expression.");
 }
 
@@ -97,7 +100,7 @@ std::shared_ptr<expr::ExprBase> Parser::assignment()
       auto &name = dynamic_cast<expr::Variable &>(*expr);
       return std::make_shared<expr::Assignment>(name.token, std::move(value));
     }
-    else if (typeid(*expr) == typeid(expr::Get)) {
+    else if(typeid(*expr) == typeid(expr::Get)) {
       auto &get = dynamic_cast<expr::Get &>(*expr);
       // this is actually a set expression, so change the node type
       return std::make_shared<expr::Set>(std::move(get.object), get.name, std::move(value));
@@ -231,7 +234,7 @@ std::shared_ptr<stmt::StmtBase> Parser::declaration()
     else if(match(Token::TokenType::FUN)) {
       return function("function");
     }
-    else if (match(Token::TokenType::CLASS)) {
+    else if(match(Token::TokenType::CLASS)) {
       return class_declaration();
     }
     return statement();
@@ -368,7 +371,7 @@ std::shared_ptr<stmt::Return> Parser::return_statement()
   return std::make_shared<stmt::Return>(keyword, std::move(value));
 }
 
-std::shared_ptr<stmt::Class> Parser::class_declaration() 
+std::shared_ptr<stmt::Class> Parser::class_declaration()
 {
   Token name = consume(Token::TokenType::IDENTIFIER, "Expect class name.");
   consume(Token::TokenType::LEFT_BRACE, "Expect '{' before class body.");

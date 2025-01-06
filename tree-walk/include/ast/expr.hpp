@@ -216,4 +216,21 @@ namespace expr
     std::shared_ptr<ExprBase> value;
   };
 
+  struct This : public ExprBase, public std::enable_shared_from_this<const This> {
+    This(const Token &token) : token(token) {}
+    std::string accept(Visitor<std::string> &visitor) const override
+    {
+      return visitor.visit_this_expr(shared_from_this());
+    }
+    Value accept(Visitor<Value> &visitor) const override
+    {
+      return visitor.visit_this_expr(shared_from_this());
+    }
+    void accept(Visitor<void> &visitor) const override
+    {
+      visitor.visit_this_expr(shared_from_this());
+    }
+    Token token;
+  };
+
 } // namespace expr

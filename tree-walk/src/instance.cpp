@@ -1,7 +1,7 @@
 #include <instance.hpp>
 #include <interpreter.hpp>
 
-expr::Value LoxInstance::get(const Token &name) const
+expr::Value LoxInstance::get(const Token &name)
 {
   auto it = fields.find(name.get_lexeme());
   if(it != fields.end()) {
@@ -10,8 +10,9 @@ expr::Value LoxInstance::get(const Token &name) const
 
   auto method = klass->find_method(name.get_lexeme());
 
-  if(method) {
-    return expr::Value(method);
+  if(method != nullptr) {
+    // TODO: how to make get const?
+    return expr::Value(method->bind(shared_from_this()));
   }
 
   throw Interpreter::RuntimeError(name, "Undefined property '" + name.get_lexeme() + "'.");

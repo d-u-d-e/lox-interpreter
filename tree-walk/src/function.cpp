@@ -1,4 +1,5 @@
 #include <function.hpp>
+#include <instance.hpp>
 #include <interpreter.hpp>
 #include <return.hpp>
 
@@ -23,3 +24,10 @@ expr::Value LoxFunction::call(Interpreter &interpreter, const std::vector<expr::
 int LoxFunction::arity() const { return declaration->params.size(); }
 
 std::string LoxFunction::to_string() const { return "<fn " + declaration->name.get_lexeme() + ">"; }
+
+std::shared_ptr<LoxFunction> LoxFunction::bind(const std::shared_ptr<LoxInstance> &instance)
+{
+  auto env = std::make_shared<Environment>(closure);
+  env->define("this", expr::Value(instance));
+  return std::make_shared<LoxFunction>(declaration, env);
+}

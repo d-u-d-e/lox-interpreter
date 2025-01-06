@@ -76,6 +76,9 @@ expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
     else if(left.is_double() && right.is_int()) {
       return std::get<double>(left.v) + std::get<long long>(right.v);
     }
+    else if(left.is_string() && right.is_string()) {
+      return std::get<std::string>(left.v) + std::get<std::string>(right.v);
+    }
 
     throw RuntimeError(expr.op, "Operands must be two numbers or two strings.");
 
@@ -413,6 +416,11 @@ expr::Value Interpreter::visit_set_expr(const expr::Set &expr)
     return value;
   }
   throw RuntimeError(expr.name, "Only instances have fields.");
+}
+
+expr::Value Interpreter::visit_this_expr(const std::shared_ptr<const expr::This> &expr)
+{
+  return lookup_variable(expr->token, expr);
 }
 
 void Interpreter::execute_block(const std::vector<std::shared_ptr<stmt::StmtBase>> &stmts,
