@@ -44,9 +44,15 @@ private:
     METHOD
   };
 
+  enum class ClassType {
+    NONE,
+    CLASS
+  };
+
   std::vector<std::unordered_map<std::string, bool>> scopes;
   Interpreter &interpreter;
   FunctionType current_func{FunctionType::NONE};
+  ClassType current_class{ClassType::NONE};
 
   void begin_scope() { scopes.push_back(std::unordered_map<std::string, bool>()); }
   void end_scope() { scopes.pop_back(); }

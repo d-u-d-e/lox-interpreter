@@ -85,8 +85,13 @@ void Resolver::visit_set_expr(const expr::Set &expr)
   resolve(expr.object);
 }
 
-void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr) 
+void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr)
 {
+  if (current_class == ClassType::NONE) {
+    Lox::error(expr->token, "Can't use 'this' outside of a class.");
+    return;
+  }
+
   // treated as a normal variable
   resolve_local(expr, expr->token);
 }
@@ -150,6 +155,9 @@ void Resolver::visit_return_stmt(const stmt::Return &stmt)
 
 void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
 {
+  auto enclosing = current_class;
+  current_class = ClassType::CLASS;
+
   declare(stmt->name);
   // not uncommon to declare a class as a local variable
   define(stmt->name);
@@ -162,6 +170,8 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
     resolve_function(method, FunctionType::METHOD);
   }
   end_scope();
+
+  current_class = enclosing;
 }
 
 void Resolver::resolve(const std::vector<std::shared_ptr<stmt::StmtBase>> &statements)
