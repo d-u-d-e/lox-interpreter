@@ -98,6 +98,12 @@ void Resolver::visit_this_expr(const std::shared_ptr<const expr::This> &expr)
 
 void Resolver::visit_super_expr(const std::shared_ptr<const expr::Super> &expr)
 {
+  if(current_class == ClassType::NONE) {
+    Lox::error(expr->keyword, "Can't use 'super' outside of a class.");
+  }
+  else if(current_class != ClassType::SUBCLASS) {
+    Lox::error(expr->keyword, "Can't use 'super' in a class with no superclass.");
+  }
   resolve_local(expr, expr->keyword);
 }
 
@@ -181,6 +187,7 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
 
   // resolve the superclass
   if(stmt->superclass != nullptr) {
+    current_class = ClassType::SUBCLASS;
     resolve(stmt->superclass);
     // if the class decl has a superclass, we create a scope for it sorrouding all of its methods,
     // where we define `super`
@@ -201,7 +208,7 @@ void Resolver::visit_class_stmt(const std::shared_ptr<const stmt::Class> &stmt)
 
   end_scope(); // `this` is no longer visible
 
-  if(stmt->superclass != nullptr){
+  if(stmt->superclass != nullptr) {
     end_scope(); // `super` is no longer visible
   }
 

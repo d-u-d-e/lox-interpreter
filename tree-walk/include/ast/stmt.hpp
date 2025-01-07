@@ -90,7 +90,7 @@ namespace stmt
   };
 
   struct Class : public StmtBase, public std::enable_shared_from_this<const Class> {
-    Class(const Token &name, std::shared_ptr<expr::Variable> && superclass,
+    Class(const Token &name, std::shared_ptr<expr::Variable> &&superclass,
           std::vector<std::shared_ptr<Function>> &&methods)
         : name(name), superclass(std::move(superclass)), methods(std::move(methods))
     {}

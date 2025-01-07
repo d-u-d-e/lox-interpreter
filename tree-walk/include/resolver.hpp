@@ -39,17 +39,9 @@ public:
   void resolve(const std::vector<std::shared_ptr<stmt::StmtBase>> &statements);
 
 private:
-  enum class FunctionType {
-    NONE,
-    FUNCTION,
-    INITIALIZER,
-    METHOD
-  };
+  enum class FunctionType { NONE, FUNCTION, INITIALIZER, METHOD };
 
-  enum class ClassType {
-    NONE,
-    CLASS
-  };
+  enum class ClassType { NONE, SUBCLASS, CLASS };
 
   std::vector<std::unordered_map<std::string, bool>> scopes;
   Interpreter &interpreter;

@@ -1,14 +1,13 @@
+#include <ast/expr.hpp>
 #include <class.hpp>
 #include <instance.hpp>
 #include <interpreter.hpp>
-#include <ast/expr.hpp>
 
 expr::Value LoxClass::call(Interpreter &interpreter, const std::vector<expr::Value> &args)
 {
   auto instance = std::make_shared<LoxInstance>(shared_from_this());
   auto ctor = find_method("init");
   if(ctor != nullptr) {
-    // TODO: should we return here?
     ctor->bind(instance)->call(interpreter, args);
   }
   return instance;
@@ -21,19 +20,18 @@ std::shared_ptr<LoxFunction> LoxClass::find_method(const std::string &name) cons
   }
 
   // else look in the superclass
-
   if(superclass != nullptr) {
     return superclass->find_method(name);
   }
-  
+
   return nullptr;
 }
 
-int LoxClass::arity() const 
+int LoxClass::arity() const
 {
-    auto ctor = find_method("init");
-    if (ctor != nullptr) {
-        return ctor->arity();
-    }
-    return 0;
+  auto ctor = find_method("init");
+  if(ctor != nullptr) {
+    return ctor->arity();
+  }
+  return 0;
 }

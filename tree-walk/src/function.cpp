@@ -15,9 +15,9 @@ expr::Value LoxFunction::call(Interpreter &interpreter, const std::vector<expr::
     interpreter.execute_block(declaration->body, std::move(env));
   }
   catch(Return &ret) {
-    /* When explicitely calling init(), a return statement inside that method should return the `this` instance,
-    not nil; when not explicitely calling init(), i.e. using the class name, this is already
-    handled in LoxClass::call */
+    /* When explicitely calling init(), a return statement inside that method should return the
+    `this` instance, not nil; when not explicitely calling init(), i.e. using the class name, this
+    is already handled in LoxClass::call */
 
     if(is_initializer) {
       return closure->get_at(0, "this");

@@ -40,7 +40,7 @@ void Environment::define(const std::string &name, const expr::Value &value)
   values[name] = value;
 }
 
-void Environment::define(const std::string &name, expr::Value &&value) 
+void Environment::define(const std::string &name, expr::Value &&value)
 {
   values.insert_or_assign(name, std::move(value));
 }

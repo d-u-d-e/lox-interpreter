@@ -89,7 +89,7 @@ std::shared_ptr<expr::ExprBase> Parser::primary()
     auto method = consume(Token::TokenType::IDENTIFIER, "Expect superclass method name.");
     return std::make_shared<expr::Super>(keyword, method);
   }
-  throw error(peek(), "Expect expression."); 
+  throw error(peek(), "Expect expression.");
 }
 
 std::shared_ptr<expr::ExprBase> Parser::assignment()
