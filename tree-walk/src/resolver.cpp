@@ -46,7 +46,7 @@ void Resolver::visit_variable_expr(const std::shared_ptr<const expr::Variable> &
   if(!scopes.empty()) {
     auto &scope_top = scopes.back();
     if(scope_top.find(token.get_lexeme()) != scope_top.end() && !scope_top[token.get_lexeme()]) {
-      Lox::error(token, "Can't read local variable in its own initializer");
+      Lox::error(token, "Can't read local variable in its own initializer.");
     }
   }
   resolve_local(expr, token);

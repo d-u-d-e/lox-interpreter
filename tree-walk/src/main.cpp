@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
   Lox lox;
 
   if(argc == 2) {
-    std::cout << "Running " << argv[1] << std::endl;
+    //std::cout << "Running " << argv[1] << std::endl;
     lox.run_file(argv[1]);
   }
   else {

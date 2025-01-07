@@ -243,10 +243,10 @@ std::string Interpreter::stringify(const expr::Value &value)
     return "nil";
   }
   else if(value.is_double()) {
-    return std::to_string(value.as<double>());
+    return std::format("{}", value.as<double>());
   }
   else if(value.is_int()) {
-    return std::to_string(value.as<long long>());
+    return std::format("{}", value.as<long long>());
   }
   else if(value.is_string()) {
     return value.as<std::string>();
@@ -330,7 +330,7 @@ expr::Value Interpreter::visit_call_expr(const expr::Call &expr)
   auto &func = *callee.as<std::shared_ptr<LoxCallable>>();
   if(func.arity() != args.size()) {
     throw RuntimeError(expr.paren, "Expected " + std::to_string(func.arity())
-                                     + " arguments but got " + std::to_string(args.size()));
+                                     + " arguments but got " + std::to_string(args.size()) + ".");
   }
   return func.call(*this, args);
 }
