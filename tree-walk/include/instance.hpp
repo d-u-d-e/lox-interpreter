@@ -1,7 +1,6 @@
 #pragma once
 #include <class.hpp>
 #include <token.hpp>
-#include <unordered_map>
 
 class LoxInstance : public std::enable_shared_from_this<LoxInstance>
 {

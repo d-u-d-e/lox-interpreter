@@ -1,7 +1,5 @@
 #pragma once
 #include <ast/stmt.hpp>
-#include <token.hpp>
-#include <vector>
 
 class Parser
 {

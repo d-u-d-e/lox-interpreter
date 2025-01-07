@@ -2,8 +2,6 @@
 
 #include <function.hpp>
 #include <instance.hpp>
-#include <memory>
-#include <token.hpp>
 #include <visitor.hpp>
 
 namespace expr

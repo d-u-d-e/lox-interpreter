@@ -1,9 +1,6 @@
 #pragma once
 
 #include <ast/expr.hpp>
-#include <memory>
-#include <vector>
-#include <visitor.hpp>
 
 namespace stmt
 {

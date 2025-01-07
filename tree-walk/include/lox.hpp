@@ -5,7 +5,6 @@
 #include <iostream>
 #include <scanner.hpp>
 #include <sstream>
-#include <string>
 #include <sysexits.h>
 
 class Lox

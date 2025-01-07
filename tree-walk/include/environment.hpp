@@ -1,7 +1,5 @@
 #pragma once
 #include <ast/expr.hpp>
-#include <token.hpp>
-#include <unordered_map>
 
 class Environment
 {

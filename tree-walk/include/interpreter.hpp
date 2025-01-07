@@ -1,9 +1,6 @@
 #pragma once
-#include <ast/expr.hpp>
 #include <ast/stmt.hpp>
 #include <environment.hpp>
-#include <iostream>
-#include <vector>
 
 class Interpreter : public expr::Visitor<expr::Value>, public stmt::Visitor<void>
 {

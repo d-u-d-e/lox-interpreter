@@ -1,8 +1,5 @@
 #pragma once
 #include <ast/stmt.hpp>
-#include <unordered_map>
-#include <vector>
-#include <visitor.hpp>
 
 namespace stmt
 {
