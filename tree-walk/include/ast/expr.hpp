@@ -27,7 +27,6 @@ namespace expr
     bool is_nil() const { return std::holds_alternative<std::monostate>(v); }
     bool is_callable() const { return std::holds_alternative<std::shared_ptr<LoxCallable>>(v); };
     bool is_instance() const { return std::holds_alternative<std::shared_ptr<LoxInstance>>(v); };
-    bool is_number() const { return is_double(); }
     std::variant<std::monostate, std::string, double, bool, std::shared_ptr<LoxCallable>,
                  std::shared_ptr<LoxInstance>>
       v{};

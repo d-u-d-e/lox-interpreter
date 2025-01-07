@@ -13,24 +13,15 @@ expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
   switch(expr.op.get_type()) {
   case Token::TokenType::MINUS:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) - std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) - std::get<double>(right.v);
 
   case Token::TokenType::STAR:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) * std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) * std::get<double>(right.v);
 
   case Token::TokenType::SLASH:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) / std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) / std::get<double>(right.v);
 
   case Token::TokenType::PLUS:
     if(left.is_double() && right.is_double()) {
@@ -39,39 +30,25 @@ expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)
     else if(left.is_string() && right.is_string()) {
       return std::get<std::string>(left.v) + std::get<std::string>(right.v);
     }
-
     throw RuntimeError(expr.op, "Operands must be two numbers or two strings.");
 
   case Token::TokenType::GREATER:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) > std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) > std::get<double>(right.v);
 
   case Token::TokenType::GREATER_EQUAL:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) >= std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) >= std::get<double>(right.v);
 
   case Token::TokenType::LESS:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) < std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) < std::get<double>(right.v);
 
   case Token::TokenType::LESS_EQUAL:
     check_number_operands(expr.op, left, right);
-    if(left.is_double() && right.is_double()) {
-      return std::get<double>(left.v) <= std::get<double>(right.v);
-    }
-    break;
+    return std::get<double>(left.v) <= std::get<double>(right.v);
 
   case Token::TokenType::EQUAL_EQUAL: return is_equal(left, right);
-
   case Token::TokenType::BANG_EQUAL: return !is_equal(left, right);
   }
 
@@ -138,7 +115,7 @@ expr::Value Interpreter::visit_unary_expr(const expr::Unary &expr)
 
 void Interpreter::check_number_operand(const Token &op, const expr::Value &operand)
 {
-  if(operand.is_number()) {
+  if(operand.is_double()) {
     return;
   }
   throw RuntimeError(op, "Operand must be a number.");
@@ -147,7 +124,7 @@ void Interpreter::check_number_operand(const Token &op, const expr::Value &opera
 void Interpreter::check_number_operands(const Token &op, const expr::Value &left,
                                         const expr::Value &right)
 {
-  if(left.is_number() && right.is_number()) {
+  if(left.is_double() && right.is_double()) {
     return;
   }
   throw RuntimeError(op, "Operands must be numbers.");
