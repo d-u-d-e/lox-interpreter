@@ -98,7 +98,7 @@ void Scanner::number()
 
 void Scanner::identifier()
 {
-  while(std::isalnum(peek())) {
+  while(std::isalnum(peek()) || peek() == '_') {
     advance();
   }
 

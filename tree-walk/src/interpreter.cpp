@@ -194,6 +194,11 @@ bool Interpreter::is_equal(const expr::Value &left, const expr::Value &right)
   else if(left.is_int() && right.is_int()) {
     return std::get<long long>(left.v) == std::get<long long>(right.v);
   }
+  else if(left.is_callable() && right.is_callable()) {
+    // bound methods and classes are equal
+    return std::get<std::shared_ptr<LoxCallable>>(left.v)
+           == std::get<std::shared_ptr<LoxCallable>>(right.v);
+  }
   return false;
 }
 
