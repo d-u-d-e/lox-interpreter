@@ -1,6 +1,7 @@
 #pragma once
-#include <class.hpp>
+
 #include <token.hpp>
+#include <class.hpp>
 
 class LoxInstance : public std::enable_shared_from_this<LoxInstance>
 {

@@ -1,6 +1,6 @@
-#include <ast/expr.hpp>
 #include <class.hpp>
 #include <instance.hpp>
+#include <function.hpp>
 #include <interpreter.hpp>
 
 expr::Value LoxClass::call(Interpreter &interpreter, const std::vector<expr::Value> &args)

@@ -1,8 +1,11 @@
 #pragma once
 
-#include <function.hpp>
-#include <instance.hpp>
 #include <visitor.hpp>
+#include <variant>
+#include <token.hpp>
+#include <vector>
+class LoxInstance;
+class LoxCallable;
 
 namespace expr
 {

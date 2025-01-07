@@ -1,12 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-
-namespace expr
-{
-  class Value;
-}
-class Interpreter;
+#include <interpreter.hpp>
 
 class LoxCallable
 {

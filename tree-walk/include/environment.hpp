@@ -1,5 +1,6 @@
 #pragma once
 #include <ast/expr.hpp>
+#include <unordered_map>
 
 class Environment
 {

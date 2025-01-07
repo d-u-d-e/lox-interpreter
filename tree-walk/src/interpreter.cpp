@@ -1,8 +1,8 @@
 #include <chrono>
 #include <class.hpp>
-#include <interpreter.hpp>
+#include <instance.hpp>
+#include <function.hpp>
 #include <lox.hpp>
-#include <memory>
 #include <return.hpp>
 
 expr::Value Interpreter::visit_binary_expr(const expr::Binary &expr)

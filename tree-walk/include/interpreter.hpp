@@ -1,5 +1,6 @@
 #pragma once
 #include <ast/stmt.hpp>
+#include <token.hpp>
 #include <environment.hpp>
 
 class Interpreter : public expr::Visitor<expr::Value>, public stmt::Visitor<void>

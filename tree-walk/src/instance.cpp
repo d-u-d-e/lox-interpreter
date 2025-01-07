@@ -1,4 +1,5 @@
 #include <instance.hpp>
+#include <function.hpp>
 #include <interpreter.hpp>
 
 expr::Value LoxInstance::get(const Token &name)

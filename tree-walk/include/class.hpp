@@ -5,10 +5,6 @@
 
 class Environment;
 class LoxFunction;
-namespace stmt
-{
-  class Class;
-};
 
 class LoxClass : public LoxCallable, public std::enable_shared_from_this<LoxClass>
 {
