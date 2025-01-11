@@ -1,2 +1,4 @@
 # lox-interpreter
-My own C++ implementation of the Lox tree-walk interpreter, from the book "Crafting Interpreters".
+My own implementations of the Lox interpreter from the book "Crafting Interpreters":
+- C++ tree-walk interpreter
+- C VM interpreter
