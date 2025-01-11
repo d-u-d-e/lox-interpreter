@@ -32,5 +32,7 @@
 *.app
 
 tree-walk/build
+vm/build
+
 .vscode/
 .clang-format
