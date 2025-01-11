@@ -30,6 +30,7 @@ public:
     std::ifstream fs(path);
     if(!fs.is_open()) {
       std::cout << "Could not open file" << std::endl;
+      exit(EX_NOINPUT);
     }
 
     std::stringstream buffer;
