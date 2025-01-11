@@ -12,6 +12,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/memory.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/value.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/vm.c
 )
 
 target_include_directories(clox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
