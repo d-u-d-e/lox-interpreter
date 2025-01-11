@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef DEBUG_PRINT_CODE
+#include <debug.h>
+#endif
+
 typedef struct {
   token_t current;
   token_t previous;
@@ -102,10 +106,18 @@ static uint8_t make_constant(value_t value)
   return (uint8_t)constant;
 }
 static void emit_constant(value_t value) { emit_bytes(OP_CONSTANT, make_constant(value)); }
-static void end_compiler() { emit_return(); }
+static void end_compiler()
+{
+  emit_return();
+#ifdef DEBUG_PRINT_CODE
+  if(!g_parser.had_error) {
+    disassemble_chunk(curren_chunk(), "code");
+  }
+#endif
+}
 
 static parse_rule_t *get_rule(token_type_t type);
-static void parse_precedence(precedence_t precedence) 
+static void parse_precedence(precedence_t precedence)
 {
   advance();
   parse_fn prefix_rule = get_rule(g_parser.previous.type)->prefix;
@@ -123,7 +135,6 @@ static void parse_precedence(precedence_t precedence)
     }
     infix_rule();
   }
-
 }
 
 static void binary()
