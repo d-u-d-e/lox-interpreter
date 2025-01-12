@@ -155,7 +155,7 @@ static void binary()
 static void number()
 {
   double value = strtod(g_parser.previous.start, NULL);
-  emit_constant(value);
+  emit_constant(NUMBER_VAL(value));
 }
 
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
