@@ -27,4 +27,38 @@ void write_value_array(value_array_t *array, value_t value)
   array->count++;
 }
 
-void print_value(value_t value) { printf("%g", AS_NUMBER(value)); }
+void print_value(value_t value)
+{
+  switch(value.type) {
+  case VAL_BOOL: {
+    printf("%s", AS_BOOL(value) ? "true" : "false");
+    break;
+  }
+  case VAL_NIL: {
+    printf("nil");
+    break;
+  }
+  case VAL_NUMBER: {
+    printf("%g", AS_NUMBER(value));
+    break;
+  }
+  }
+}
+
+bool values_equal(value_t left, value_t right)
+{
+  if(left.type != right.type) {
+    return false;
+  }
+  switch(left.type) {
+  case VAL_BOOL: {
+    return AS_BOOL(left) == AS_BOOL(right);
+  }
+  case VAL_NIL: {
+    return true;
+  }
+  case VAL_NUMBER: {
+    return AS_NUMBER(left) == AS_NUMBER(right);
+  }
+  }
+}
