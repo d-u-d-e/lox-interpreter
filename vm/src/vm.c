@@ -195,9 +195,14 @@ static interpret_result_t run()
       break;
     }
 
-    case OP_RETURN: {
+    case OP_PRINT: {
       print_value(pop());
       printf("\n");
+      break;
+    }
+
+    case OP_RETURN: {
+      // exit interpreter
       return INTERPRET_OK;
     }
     }

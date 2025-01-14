@@ -41,6 +41,11 @@ typedef struct {
 parser_t g_parser;
 chunk_t *g_compiling_chunk;
 
+static parse_rule_t *get_rule(token_type_t type);
+static void statement();
+static void declaration();
+static void expression();
+
 static chunk_t *curren_chunk() { return g_compiling_chunk; }
 static void error_at(token_t *token, const char *message)
 {
@@ -89,6 +94,17 @@ static void consume(token_type_t type, const char *message)
   error_at_current(message);
 }
 
+static bool check(token_type_t type) { return g_parser.current.type == type; }
+
+static bool match(token_type_t type)
+{
+  if(check(type)) {
+    advance();
+    return true;
+  }
+  return false;
+}
+
 static void emit_byte(uint8_t byte) { write_chunk(curren_chunk(), byte, g_parser.previous.line); }
 static void emit_bytes(uint8_t byte1, uint8_t byte2)
 {
@@ -117,7 +133,6 @@ static void end_compiler()
 #endif
 }
 
-static parse_rule_t *get_rule(token_type_t type);
 static void parse_precedence(precedence_t precedence)
 {
   advance();
@@ -181,6 +196,22 @@ static void string()
 }
 
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
+
+static void print_statement()
+{
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+  emit_byte(OP_PRINT);
+}
+
+static void statement()
+{
+  if(match(TOKEN_PRINT)) {
+    print_statement();
+  }
+}
+
+static void declaration() { statement(); }
 
 static void grouping()
 {
@@ -259,8 +290,10 @@ bool compile(const char *source, chunk_t *chunk)
   g_parser.panic_mode = false;
 
   advance();
-  expression();
-  consume(TOKEN_EOF, "Expect end of expression.");
+
+  while(!match(TOKEN_EOF)) {
+    declaration();
+  }
 
   end_compiler();
   return !g_parser.had_error;
