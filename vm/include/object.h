@@ -6,8 +6,8 @@
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
 #define IS_STRING(value) is_obj_type(value, OBJ_TYPE_STRING)
 
-#define AS_STRING(value) ((obj_string_t *)AS_OBJ(value))
-#define AS_CSTRING(value) (((obj_string_t *)AS_OBJ(value))->chars)
+#define AS_STRING(value) ((const obj_string_t *)AS_OBJ(value))
+#define AS_CSTRING(value) (((const obj_string_t *)AS_OBJ(value))->chars)
 
 typedef enum {
   OBJ_TYPE_STRING,
@@ -21,6 +21,7 @@ struct obj {
 struct obj_string {
   struct obj base;
   int length;
+  uint32_t hash;
   char chars[]; // flexible array
 };
 
@@ -30,5 +31,6 @@ static inline bool is_obj_type(value_t value, obj_type_t type)
 }
 
 obj_string_t *allocate_string(int length);
-obj_string_t *copy_string(const char *chars, int length);
+uint32_t hash_string(const char *key, int length);
+const obj_string_t *copy_string(const char *chars, int length);
 void print_object(value_t value);

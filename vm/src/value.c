@@ -1,8 +1,8 @@
 #include <memory.h>
 #include <object.h>
 #include <stdio.h>
-#include <value.h>
 #include <string.h>
+#include <value.h>
 
 void init_value_array(value_array_t *array)
 {
@@ -69,10 +69,8 @@ bool values_equal(value_t left, value_t right)
   }
 
   case VAL_OBJ: {
-    obj_string_t *left_str = AS_STRING(left);
-    obj_string_t *right_str = AS_STRING(right);
-    return left_str->length == right_str->length
-           && memcmp(left_str->chars, right_str->chars, left_str->length) == 0;
+    // strings are interned
+    return AS_OBJ(left) == AS_OBJ(right);
   }
 
   default: return false; // unreachable

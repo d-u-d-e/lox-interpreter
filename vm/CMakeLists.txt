@@ -16,6 +16,7 @@ add_executable(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/compiler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/scanner.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/object.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/table.c
 )
 
 target_include_directories(clox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)

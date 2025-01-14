@@ -29,9 +29,14 @@ void init_vm()
 {
   reset_stack();
   g_vm.objects = NULL;
+  init_table(&g_vm.strings);
 }
 
-void free_vm() { free_objects(); }
+void free_vm()
+{
+  free_objects();
+  free_table(&g_vm.strings);
+}
 
 void push(value_t value)
 {
@@ -54,15 +59,28 @@ static bool isFalsey(value_t value)
 
 static void concatenate()
 {
-  obj_string_t *b = AS_STRING(pop());
-  obj_string_t *a = AS_STRING(pop());
+  const obj_string_t *b = AS_STRING(pop());
+  const obj_string_t *a = AS_STRING(pop());
   int new_length = a->length + b->length;
 
   obj_string_t *res = allocate_string(new_length);
   memcpy(res->chars, a->chars, a->length);
   memcpy(&res->chars[a->length], b->chars, b->length);
   res->chars[new_length] = '\0';
-  push(OBJ_VAL(res));
+  res->hash = hash_string(res->chars, new_length);
+
+  const obj_string_t *interned
+    = table_find_string(&g_vm.strings, res->chars, new_length, res->hash);
+  if(interned != NULL) {
+    // we must keep using the interned string
+    free_object((obj_t *)res);
+    push(OBJ_VAL(interned));
+  }
+  else {
+    // intern it
+    table_set(&g_vm.strings, res, NIL_VAL);
+    push(OBJ_VAL(res));
+  }
 }
 
 static interpret_result_t run()
