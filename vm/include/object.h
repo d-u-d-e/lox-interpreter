@@ -21,7 +21,7 @@ struct obj {
 struct obj_string {
   struct obj base;
   int length;
-  char *chars;
+  char chars[]; // flexible array
 };
 
 static inline bool is_obj_type(value_t value, obj_type_t type)
@@ -29,6 +29,6 @@ static inline bool is_obj_type(value_t value, obj_type_t type)
   return IS_OBJ(value) && AS_OBJ(value)->type == type;
 }
 
-obj_string_t *take_string(char *chars, int length);
+obj_string_t *allocate_string(int length);
 obj_string_t *copy_string(const char *chars, int length);
 void print_object(value_t value);

@@ -20,33 +20,28 @@ static obj_t *allocate_obj(size_t size, obj_type_t type)
   return object;
 }
 
-static obj_string_t *allocate_string(char *chars, int length)
-{
-  obj_string_t *str = ALLOCATE_OBJ(obj_string_t, OBJ_TYPE_STRING);
-  str->length = length;
-  str->chars = chars;
-  return str;
-}
-
-obj_string_t *take_string(char *chars, int length)
-{
-  // takes ownership
-  return allocate_string(chars, length);
-}
-
 obj_string_t *copy_string(const char *chars, int length)
 {
-  char *heap_chars = ALLOCATE(char, length + 1);
-  memcpy(heap_chars, chars, length);
-  heap_chars[length] = '\0';
-  return allocate_string(heap_chars, length);
+  obj_string_t *res = allocate_string(length);
+  memcpy(res->chars, chars, length);
+  res->chars[length] = '\0';
+  return res;
+}
+
+obj_string_t *allocate_string(int length)
+{
+  obj_string_t *res = ALLOCATE(obj_string_t, sizeof(obj_string_t) + length + 1);
+  res->length = length;
+  res->base.type = OBJ_TYPE_STRING;
+  return res;
 }
 
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
   case OBJ_TYPE_STRING: {
-    printf("%s", AS_CSTRING(value));
+    obj_string_t *str = AS_STRING(value);
+    printf("%s", str->chars);
     break;
   }
   }

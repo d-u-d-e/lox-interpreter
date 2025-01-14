@@ -57,12 +57,12 @@ static void concatenate()
   obj_string_t *b = AS_STRING(pop());
   obj_string_t *a = AS_STRING(pop());
   int new_length = a->length + b->length;
-  char *chars = ALLOCATE(char, new_length + 1);
-  memcpy(chars, a->chars, a->length);
-  memcpy(chars + a->length, b->chars, b->length);
-  chars[new_length] = '\0';
-  obj_string_t *result = take_string(chars, new_length);
-  push(OBJ_VAL(result));
+
+  obj_string_t *res = allocate_string(new_length);
+  memcpy(res->chars, a->chars, a->length);
+  memcpy(&res->chars[a->length], b->chars, b->length);
+  res->chars[new_length] = '\0';
+  push(OBJ_VAL(res));
 }
 
 static interpret_result_t run()
