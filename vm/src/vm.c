@@ -133,6 +133,11 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_POP: {
+      pop();
+      break;
+    }
+
     case OP_EQUAL: {
       value_t b = pop();
       value_t a = pop();

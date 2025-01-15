@@ -197,6 +197,13 @@ static void string()
 
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
 
+static void expression_statement()
+{
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emit_byte(OP_POP);
+}
+
 static void print_statement()
 {
   expression();
@@ -204,14 +211,46 @@ static void print_statement()
   emit_byte(OP_PRINT);
 }
 
+static void synchronize()
+{
+  g_parser.panic_mode = false;
+
+  while(g_parser.current.type != TOKEN_EOF) {
+    if(g_parser.previous.type == TOKEN_SEMICOLON) {
+      return;
+    }
+
+    switch(g_parser.current.type) {
+    case TOKEN_CLASS:
+    case TOKEN_FUN:
+    case TOKEN_VAR:
+    case TOKEN_FOR:
+    case TOKEN_IF:
+    case TOKEN_WHILE:
+    case TOKEN_PRINT:
+    case TOKEN_RETURN: return;
+    default: break;
+    }
+    advance();
+  }
+}
+
 static void statement()
 {
   if(match(TOKEN_PRINT)) {
     print_statement();
   }
+  else {}
 }
 
-static void declaration() { statement(); }
+static void declaration()
+{
+  statement();
+
+  if(g_parser.panic_mode) {
+    synchronize();
+  }
+}
 
 static void grouping()
 {

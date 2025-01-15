@@ -49,6 +49,9 @@ int disassemble_instruction(chunk_t *chunk, int offset)
   case OP_FALSE: {
     return simple_instruction("OP_FALSE", offset);
   }
+  case OP_POP: {
+    return simple_instruction("OP_POP", offset);
+  }
   case OP_EQUAL: {
     return simple_instruction("OP_EQUAL", offset);
   }
