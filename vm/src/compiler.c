@@ -136,6 +136,7 @@ static void end_compiler()
 static void parse_precedence(precedence_t precedence)
 {
   advance();
+  // When we call a rule, the current token has already been advanced
   parse_fn prefix_rule = get_rule(g_parser.previous.type)->prefix;
   if(prefix_rule == NULL) {
     error("Expect expression.");
@@ -152,6 +153,19 @@ static void parse_precedence(precedence_t precedence)
     infix_rule();
   }
 }
+
+static uint8_t identifier_constant(token_t *token)
+{
+  return make_constant(OBJ_VAL(copy_string(token->start, token->length)));
+}
+
+static uint8_t parse_variable(const char *error_message)
+{
+  consume(TOKEN_IDENTIFIER, error_message);
+  return identifier_constant(&g_parser.previous);
+}
+
+static void define_variable(uint8_t global) { emit_bytes(OP_DEFINE_GLOBAL, global); }
 
 static void binary()
 {
@@ -195,7 +209,29 @@ static void string()
   emit_constant(OBJ_VAL(copy_string(g_parser.previous.start + 1, g_parser.previous.length - 2)));
 }
 
+static void named_variable(token_t token) 
+{
+  uint8_t arg = identifier_constant(&token);
+  emit_bytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable() { named_variable(g_parser.previous); }
+
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
+
+static void var_declaration()
+{
+  uint8_t global = parse_variable("Expect variable name.");
+  if(match(TOKEN_EQUAL)) {
+    expression();
+  }
+  else {
+    emit_byte(OP_NIL);
+  }
+
+  consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
+  define_variable(global);
+}
 
 static void expression_statement()
 {
@@ -245,7 +281,12 @@ static void statement()
 
 static void declaration()
 {
-  statement();
+  if(match(TOKEN_VAR)) {
+    var_declaration();
+  }
+  else {
+    statement();
+  }
 
   if(g_parser.panic_mode) {
     synchronize();
@@ -294,7 +335,7 @@ parse_rule_t rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,      binary, PREC_COMPARISON},
   [TOKEN_LESS]          = {NULL,      binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,      binary, PREC_COMPARISON},
-  [TOKEN_IDENTIFIER]    = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER]    = {variable,  NULL,   PREC_NONE},
   [TOKEN_STRING]        = {string,    NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,    NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,      NULL,   PREC_NONE},

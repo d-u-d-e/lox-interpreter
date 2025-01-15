@@ -29,12 +29,14 @@ void init_vm()
 {
   reset_stack();
   g_vm.objects = NULL;
+  init_table(&g_vm.globals);
   init_table(&g_vm.strings);
 }
 
 void free_vm()
 {
   free_objects();
+  free_table(&g_vm.globals);
   free_table(&g_vm.strings);
 }
 
@@ -87,6 +89,7 @@ static interpret_result_t run()
 {
 #define READ_BYTE() (*g_vm.ip++)
 #define READ_CONSTANT() (g_vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op)                                                                  \
   do {                                                                                             \
     if(!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) {                                               \
@@ -134,6 +137,25 @@ static interpret_result_t run()
     }
 
     case OP_POP: {
+      pop();
+      break;
+    }
+
+    case OP_GET_GLOBAL: {
+      const obj_string_t *name = READ_STRING();
+      value_t value;
+      if(!table_get(&g_vm.globals, name, &value)) {
+        runtime_error("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      push(value);
+      break;
+    }
+
+    case OP_DEFINE_GLOBAL: {
+      const obj_string_t *name = READ_STRING();
+      // can redefine globals
+      table_set(&g_vm.globals, name, peek(0));
       pop();
       break;
     }
@@ -215,6 +237,7 @@ static interpret_result_t run()
 
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 #undef BINARY_OP
 }
 
