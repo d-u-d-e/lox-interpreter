@@ -30,7 +30,7 @@ typedef enum {
   PREC_PRIMARY,
 } precedence_t;
 
-typedef void (*parse_fn)(void);
+typedef void (*parse_fn)(bool can_assign);
 
 typedef struct {
   parse_fn prefix;
@@ -142,7 +142,8 @@ static void parse_precedence(precedence_t precedence)
     error("Expect expression.");
     return;
   }
-  prefix_rule();
+  bool can_assign = precedence <= PREC_ASSIGNMENT;
+  prefix_rule(can_assign);
 
   while(precedence <= get_rule(g_parser.current.type)->precedence) {
     advance();
@@ -150,8 +151,14 @@ static void parse_precedence(precedence_t precedence)
     if(infix_rule == NULL) {
       break;
     }
-    infix_rule();
+    infix_rule(can_assign);
   }
+
+  if (!can_assign && match(TOKEN_EQUAL)) {
+    // variable assignment cannot be performed
+    error("Invalid assignment target.");
+  }
+
 }
 
 static uint8_t identifier_constant(token_t *token)
@@ -167,7 +174,7 @@ static uint8_t parse_variable(const char *error_message)
 
 static void define_variable(uint8_t global) { emit_bytes(OP_DEFINE_GLOBAL, global); }
 
-static void binary()
+static void binary(bool can_assign)
 {
   uint8_t operator_type = g_parser.previous.type;
   parse_rule_t *rule = get_rule(operator_type);
@@ -188,7 +195,7 @@ static void binary()
   }
 }
 
-static void literal()
+static void literal(bool can_assign)
 {
   switch(g_parser.previous.type) {
   case TOKEN_TRUE: emit_byte(OP_TRUE); break;
@@ -198,24 +205,31 @@ static void literal()
   }
 }
 
-static void number()
+static void number(bool can_assign)
 {
   double value = strtod(g_parser.previous.start, NULL);
   emit_constant(NUMBER_VAL(value));
 }
 
-static void string()
+static void string(bool can_assign)
 {
   emit_constant(OBJ_VAL(copy_string(g_parser.previous.start + 1, g_parser.previous.length - 2)));
 }
 
-static void named_variable(token_t token) 
+static void named_variable(token_t token, bool can_assign) 
 {
   uint8_t arg = identifier_constant(&token);
-  emit_bytes(OP_GET_GLOBAL, arg);
+
+  if (can_assign && match(TOKEN_EQUAL)) {
+    expression();
+    emit_bytes(OP_SET_GLOBAL, arg);
+  }
+  else {
+    emit_bytes(OP_GET_GLOBAL, arg);
+  }
 }
 
-static void variable() { named_variable(g_parser.previous); }
+static void variable(bool can_assign) { named_variable(g_parser.previous, can_assign); }
 
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
 
@@ -276,7 +290,9 @@ static void statement()
   if(match(TOKEN_PRINT)) {
     print_statement();
   }
-  else {}
+  else {
+    expression_statement();
+  }
 }
 
 static void declaration()
@@ -293,13 +309,13 @@ static void declaration()
   }
 }
 
-static void grouping()
+static void grouping(bool can_assign)
 {
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void unary()
+static void unary(bool can_assign)
 {
   token_type_t operator_type = g_parser.previous.type;
 

@@ -160,6 +160,17 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_SET_GLOBAL: {
+      const obj_string_t *name = READ_STRING();
+      if(table_set(&g_vm.globals, name, peek(0))) {
+        // table_set adds it even if undefined
+        table_delete(&g_vm.globals, name);
+        runtime_error("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      break;
+    }
+
     case OP_EQUAL: {
       value_t b = pop();
       value_t a = pop();
