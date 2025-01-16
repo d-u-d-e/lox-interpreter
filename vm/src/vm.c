@@ -141,6 +141,27 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_GET_LOCAL: {
+      /*
+      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom
+      Notice that while it may seem redundant to push a value already somewhere down in the stack
+      it is not, because other instructions look at the stack top. */
+      uint8_t slot = READ_BYTE();
+      push(g_vm.stack[slot]);
+      break;
+    }
+
+    case OP_SET_LOCAL: {
+      /*
+      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom, where
+      the local lives.
+      Again, no pop since this comes from an expression statement. In other words,
+      every expression produces a value. */
+      uint8_t slot = READ_BYTE();
+      g_vm.stack[slot] = peek(0);
+      break;
+    }
+
     case OP_GET_GLOBAL: {
       const obj_string_t *name = READ_STRING();
       value_t value;
@@ -154,8 +175,11 @@ static interpret_result_t run()
 
     case OP_DEFINE_GLOBAL: {
       const obj_string_t *name = READ_STRING();
-      // can redefine globals
+      // Can redefine globals
+      // TODO: understand why pop after table set
       table_set(&g_vm.globals, name, peek(0));
+      // Recall that this instruction comes from a declaration(), not an expression statement
+      // so we do the pop here
       pop();
       break;
     }
@@ -168,6 +192,7 @@ static interpret_result_t run()
         runtime_error("Undefined variable '%s'.", name->chars);
         return INTERPRET_RUNTIME_ERROR;
       }
+      // Recall that this instruction comes from an expression statement, so no pop here
       break;
     }
 

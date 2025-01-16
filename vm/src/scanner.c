@@ -68,7 +68,7 @@ static token_t error_token(const char *message)
 {
   token_t token;
   token.type = TOKEN_ERROR;
-  token.start = g_scanner.start;
+  token.start = message;
   token.length = (int)strlen(message);
   token.line = g_scanner.line;
   return token;
