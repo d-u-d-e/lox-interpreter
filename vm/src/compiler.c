@@ -150,6 +150,27 @@ static void emit_bytes(uint8_t byte1, uint8_t byte2)
   emit_byte(byte2);
 }
 
+static int emit_jump(uint8_t instruction)
+{
+  emit_byte(instruction);
+  // Here is the placeholder
+  emit_byte(0xFF);
+  emit_byte(0xFF);
+  // Return the offset of the placeholder in order to patch it later
+  return curren_chunk()->count - 2;
+}
+
+static void emit_loop(int loop_start)
+{
+  emit_byte(OP_LOOP);
+  int offset = curren_chunk()->count - loop_start + 2;
+  if(offset > UINT16_MAX) {
+    error("Loop body too large.");
+  }
+  emit_byte((offset >> 8) & 0xFFU);
+  emit_byte(offset & 0xFFU);
+}
+
 static void emit_return() { emit_byte(OP_RETURN); }
 static uint8_t make_constant(value_t value)
 {
@@ -161,6 +182,18 @@ static uint8_t make_constant(value_t value)
   return (uint8_t)constant;
 }
 static void emit_constant(value_t value) { emit_bytes(OP_CONSTANT, make_constant(value)); }
+
+static void patch_jump(int offset)
+{
+  // The jump value is added to the instruction pointer, so we subtract 2
+  int jump = curren_chunk()->count - offset - 2;
+  if(jump > UINT16_MAX) {
+    error("Too much code to jump over.");
+  }
+  // Big endian
+  curren_chunk()->code[offset] = (jump >> 8) & 0xFFU;
+  curren_chunk()->code[offset + 1] = jump & 0xFFU;
+}
 
 static void init_compiler(compiler_t *compiler)
 {
@@ -410,6 +443,37 @@ static void var_declaration()
   define_variable(global);
 }
 
+static void and_(bool can_assign)
+{
+  /*
+  When this is called, the left expression has already been parsed.
+  This means that at runtime, the left expression will be on the stack.
+  The LHS is left on the stack if the condition is false, because that is the result of the
+  expression. Otherwise it is discarded, and the RHS becomes the value of the expression.
+  Now it should be clear why emit_jump does not pop the stack value at runtime.
+  */
+  int end_jump = emit_jump(OP_JUMP_IF_FALSE);
+  emit_byte(OP_POP);
+  parse_precedence(PREC_AND);
+  patch_jump(end_jump);
+}
+
+static void or_(bool can_assign)
+{
+  int else_jump = emit_jump(OP_JUMP_IF_FALSE);
+  int end_jump = emit_jump(OP_JUMP);
+
+  // The LHS is false if we reach here, so pop it.
+  patch_jump(else_jump);
+  emit_byte(OP_POP);
+
+  // Keep parsing the RHS.
+  parse_precedence(PREC_OR);
+
+  // The LHS is true if we reach here, so keep the value on the stack.
+  patch_jump(end_jump);
+}
+
 static void expression() { parse_precedence(PREC_ASSIGNMENT); }
 
 static void block()
@@ -427,6 +491,29 @@ static void expression_statement()
   emit_byte(OP_POP);
 }
 
+static void if_statement()
+{
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+  // At runtime this will leave the condition on the stack
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+  // We don't know how much to jump, so we leave a placeholder
+  // This technique is called backpatching
+  int then_jump = emit_jump(OP_JUMP_IF_FALSE);
+  emit_byte(OP_POP); // Pop the condition when the condition is truthy
+  statement();
+  int else_jump = emit_jump(OP_JUMP); // Skip else when the condition is truthy
+  patch_jump(then_jump);
+  emit_byte(OP_POP); // Pop the condition when the condition is falsey
+  // Notice that we emit an implicit else instruction even if there is no else
+
+  // Optional else
+  if(match(TOKEN_ELSE)) {
+    statement();
+  }
+  patch_jump(else_jump);
+}
+
 static void print_statement()
 {
   expression();
@@ -434,10 +521,32 @@ static void print_statement()
   emit_byte(OP_PRINT);
 }
 
+static void while_statement()
+{
+  int loop_start = curren_chunk()->count;
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+  int exit_jump = emit_jump(OP_JUMP_IF_FALSE);
+  emit_byte(OP_POP); // Pop the condition when the condition is truthy
+  statement();
+  emit_loop(loop_start); // Loop back so that we can re-evaluate the condition
+
+  patch_jump(exit_jump);
+  emit_byte(OP_POP); // Pop the condition when the condition is falsey
+}
+
 static void statement()
 {
   if(match(TOKEN_PRINT)) {
     print_statement();
+  }
+  else if(match(TOKEN_IF)) {
+    if_statement();
+  }
+  else if(match(TOKEN_WHILE)) {
+    while_statement();
   }
   else if(match(TOKEN_LEFT_BRACE)) {
     begin_scope();
@@ -483,7 +592,7 @@ static void unary(bool can_assign)
   }
 }
 
-// Pratt rules
+// Pratt rules: third column is just for infix rules
 // clang-format off
 parse_rule_t rules[] = {
   [TOKEN_LEFT_PAREN]    = {grouping,  NULL,   PREC_NONE},
@@ -508,7 +617,7 @@ parse_rule_t rules[] = {
   [TOKEN_IDENTIFIER]    = {variable,  NULL,   PREC_NONE},
   [TOKEN_STRING]        = {string,    NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {number,    NULL,   PREC_NONE},
-  [TOKEN_AND]           = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_AND]           = {NULL,      and_,   PREC_AND},
   [TOKEN_CLASS]         = {NULL,      NULL,   PREC_NONE},
   [TOKEN_ELSE]          = {NULL,      NULL,   PREC_NONE},
   [TOKEN_FALSE]         = {literal,   NULL,   PREC_NONE},
@@ -516,7 +625,7 @@ parse_rule_t rules[] = {
   [TOKEN_FUN]           = {NULL,      NULL,   PREC_NONE},
   [TOKEN_IF]            = {NULL,      NULL,   PREC_NONE},
   [TOKEN_NIL]           = {literal,   NULL,   PREC_NONE},
-  [TOKEN_OR]            = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_OR]            = {NULL,      or_,    PREC_OR},
   [TOKEN_PRINT]         = {NULL,      NULL,   PREC_NONE},
   [TOKEN_RETURN]        = {NULL,      NULL,   PREC_NONE},
   [TOKEN_SUPER]         = {NULL,      NULL,   PREC_NONE},
