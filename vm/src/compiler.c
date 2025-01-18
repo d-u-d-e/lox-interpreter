@@ -631,6 +631,22 @@ static void print_statement()
   emit_byte(OP_PRINT);
 }
 
+static void return_statement()
+{
+  if(g_current_compiler->type == TYPE_SCRIPT) {
+    error("Can't return from top-level code.");
+  }
+
+  if(match(TOKEN_SEMICOLON)) {
+    emit_return();
+  }
+  else {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
+    emit_byte(OP_RETURN);
+  }
+}
+
 static void while_statement()
 {
   int loop_start = current_chunk()->count;
@@ -708,6 +724,9 @@ static void statement()
   }
   else if(match(TOKEN_IF)) {
     if_statement();
+  }
+  else if(match(TOKEN_RETURN)) {
+    return_statement();
   }
   else if(match(TOKEN_WHILE)) {
     while_statement();
