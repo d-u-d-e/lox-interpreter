@@ -184,7 +184,11 @@ static void emit_loop(int loop_start)
   emit_byte(offset & 0xFFU);
 }
 
-static void emit_return() { emit_byte(OP_RETURN); }
+static void emit_return()
+{
+  emit_byte(OP_NIL);
+  emit_byte(OP_RETURN);
+}
 static uint8_t make_constant(value_t value)
 {
   int constant = add_constant(current_chunk(), value);

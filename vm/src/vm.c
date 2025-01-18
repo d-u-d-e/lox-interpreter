@@ -358,8 +358,17 @@ static interpret_result_t run()
     }
 
     case OP_RETURN: {
-      // exit interpreter
-      return INTERPRET_OK;
+      value_t result = pop(); // The value to be returned to the caller.
+      g_vm.frame_count--;
+      if(g_vm.frame_count == 0) {
+        // Top level, exit
+        pop(); // Pop the script "function"
+        return INTERPRET_OK;
+      }
+      g_vm.stack_top = frame->slots;              // Pop all locals and parameters
+      frame = &g_vm.frames[g_vm.frame_count - 1]; // Reset frame pointer
+      push(result); // Return value on the stack.
+      break;
     }
     }
   }

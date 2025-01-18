@@ -4,5 +4,6 @@ fun test(a) {
     {
         print "test_inner_str";
     }
+    test_inner();
 }
-print test;
+test("a");
