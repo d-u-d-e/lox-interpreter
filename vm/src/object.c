@@ -38,6 +38,7 @@ obj_function_t *new_function()
 {
   obj_function_t *function = ALLOCATE_OBJ(obj_function_t, OBJ_FUNCTION);
   function->arity = 0;
+  function->upvalue_count = 0;
   function->name = NULL;
   init_chunk(&function->chunk);
   return function;

@@ -44,6 +44,12 @@ typedef struct {
   int depth;    // records the scope where the variable was declared
 } local_t;
 
+// Upvalues refer to local variables in an enclosing function
+typedef struct {
+  uint8_t index;
+  bool is_local;
+} upvalue_t;
+
 // Is the compiler compiling a function or the top level script?
 typedef enum {
   TYPE_FUNCTION,
@@ -60,6 +66,8 @@ typedef struct compiler_t {
   function_type_t type;
 
   local_t locals[UINT8_COUNT];
+  upvalue_t upvalues[UINT8_COUNT]; // There's a restriction on how many unique variables a function
+                                   // can close over.
   int local_count; // tracks how many locals are in scope, i.e. how many array elements are in use
   int scope_depth; // number of blocks sorrounding the current bit of code, zero indicates global
                    // scope
@@ -388,6 +396,46 @@ static int resolve_local(compiler_t *compiler, token_t *name)
   return -1;
 }
 
+static int add_upvalue(compiler_t *compiler, uint8_t index, bool is_local)
+{
+  int upvalue_count = compiler->function->upvalue_count;
+
+  // Don't add the same upvalue twice
+  for(int i = 0; i < upvalue_count; i++) {
+    upvalue_t *upvalue = &compiler->upvalues[i];
+    if(upvalue->index == index && upvalue->is_local == is_local) {
+      return i;
+    }
+  }
+
+  // Add new upvalue if there's room
+  if(upvalue_count == UINT8_COUNT) {
+    error("Too many closure variables in function.");
+    return 0;
+  }
+
+  compiler->upvalues[upvalue_count].is_local = is_local;
+  compiler->upvalues[upvalue_count].index = index;
+  return g_current_compiler->function->upvalue_count++;
+}
+
+static int resolve_upvalue(compiler_t *compiler, token_t *name)
+{
+  if(compiler->enclosing == NULL) {
+    // We are in top level code compiler, so the variable must be "hopefully" global
+    return -1;
+  }
+
+  int local = resolve_local(compiler->enclosing, name);
+  if(local != -1) {
+    // We found a local variable in the enclosing function.
+    // This returns the operand of OP_GET_UPVALUE, OP_SET_UPVALUE. The current upvalue index!
+    // This way the compiler tracks which variable in the enclosing function needs to be captured.
+    return add_upvalue(compiler, (uint8_t)local, true);
+  }
+  return -1;
+}
+
 static void add_local(token_t name)
 {
   // Check if there's enough space to add a new local
@@ -478,8 +526,13 @@ static void named_variable(token_t token, bool can_assign)
     get_op = OP_GET_LOCAL;
     set_op = OP_SET_LOCAL;
   }
+  else if(arg = resolve_upvalue(g_current_compiler, &token) != -1) {
+    // We found a local variable in a sorrounding function
+    get_op = OP_GET_UPVALUE;
+    set_op = OP_SET_UPVALUE;
+  }
   else {
-    // Found global
+    // It must be a global
     arg = identifier_constant(&token);
     get_op = OP_GET_GLOBAL;
     set_op = OP_SET_GLOBAL;

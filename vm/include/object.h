@@ -31,6 +31,7 @@ struct obj {
 typedef struct {
   struct obj base;
   int arity;
+  int upvalue_count;
   chunk_t chunk;
   const obj_string_t *name;
 } obj_function_t;
