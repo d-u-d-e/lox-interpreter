@@ -5,9 +5,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <vm.h>
 
 vm_t g_vm;
+
+static value_t clock_native(int arg_count, value_t *args)
+{
+  return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
 
 static void reset_stack()
 {
@@ -43,12 +49,24 @@ static void runtime_error(const char *format, ...)
   reset_stack();
 }
 
+static void define_native(const char *name, native_fn_t function)
+{
+  // Storing the function name and the function itself on the stack prevents the GC from collecting
+  // them.
+  push(OBJ_VAL(copy_string(name, (int)strlen(name))));
+  push(OBJ_VAL(new_native(function)));
+  table_set(&g_vm.globals, AS_STRING(g_vm.stack[0]), g_vm.stack[1]);
+  pop();
+  pop();
+}
+
 void init_vm()
 {
   reset_stack();
   g_vm.objects = NULL;
   init_table(&g_vm.globals);
   init_table(&g_vm.strings);
+  define_native("clock", clock_native);
 }
 
 void free_vm()
@@ -102,6 +120,14 @@ static bool call_value(value_t value, int arg_count)
     case OBJ_FUNCTION: {
       return call(AS_FUNCTION(value), arg_count);
     }
+    case OBJ_NATIVE: {
+      native_fn_t native = AS_NATIVE(value);
+      value_t result = native(arg_count, g_vm.stack_top - arg_count);
+      g_vm.stack_top -= arg_count + 1;
+      push(result);
+      return true;
+    }
+
     default: break; // non callable object type
     }
   }
@@ -367,7 +393,7 @@ static interpret_result_t run()
       }
       g_vm.stack_top = frame->slots;              // Pop all locals and parameters
       frame = &g_vm.frames[g_vm.frame_count - 1]; // Reset frame pointer
-      push(result); // Return value on the stack.
+      push(result);                               // Return value on the stack.
       break;
     }
     }
