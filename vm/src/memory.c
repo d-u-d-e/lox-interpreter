@@ -43,6 +43,12 @@ void free_object(obj_t *object)
     FREE(obj_closure_t, closure);
     break;
   }
+
+  case OBJ_UPVALUE: {
+    // Multiple closures may use the same variable, so it is not owned.
+    FREE(obj_upvalue_t, object);
+    break;
+  }
   }
 }
 

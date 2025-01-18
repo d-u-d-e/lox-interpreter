@@ -21,6 +21,7 @@ typedef enum {
   OBJ_FUNCTION,
   OBJ_NATIVE,
   OBJ_TYPE_STRING,
+  OBJ_UPVALUE
 } obj_type_t;
 
 struct obj {
@@ -53,6 +54,11 @@ struct obj_string {
   char chars[]; // flexible array
 };
 
+typedef struct {
+  struct obj base;
+  value_t *location;
+} obj_upvalue_t;
+
 // Closures are basically functions, but capture the sorroundings locals.
 typedef struct {
   obj_t base;
@@ -65,6 +71,7 @@ static inline bool is_obj_type(value_t value, obj_type_t type)
 }
 
 obj_native_t *new_native(native_fn_t function);
+obj_upvalue_t *new_upvalue(value_t *location);
 obj_closure_t *new_closure(obj_function_t *function);
 obj_function_t *new_function();
 obj_string_t *allocate_string(int length);

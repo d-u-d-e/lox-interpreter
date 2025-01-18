@@ -27,6 +27,13 @@ obj_native_t *new_native(native_fn_t function)
   return native;
 }
 
+obj_upvalue_t *new_upvalue(value_t *location)
+{
+  obj_upvalue_t *upvalue = ALLOCATE_OBJ(obj_upvalue_t, OBJ_UPVALUE);
+  upvalue->location = location;
+  return upvalue;
+}
+
 obj_closure_t *new_closure(obj_function_t *function)
 {
   obj_closure_t *closure = ALLOCATE_OBJ(obj_closure_t, OBJ_CLOSURE);
@@ -114,6 +121,12 @@ void print_object(value_t value)
 
   case OBJ_FUNCTION: {
     print_function(AS_FUNCTION(value));
+    break;
+  }
+
+  case OBJ_UPVALUE: {
+    // This gets never called by the runtime, only for compiler warning
+    printf("upvalue");
     break;
   }
   }
