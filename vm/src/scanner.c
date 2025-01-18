@@ -142,7 +142,7 @@ static token_type_t identifier_type()
     }
     break;
   case 'v': return check_keyword(1, 2, "ar", TOKEN_VAR);
-  case 'w': return check_keyword(1, 3, "hile", TOKEN_WHILE);
+  case 'w': return check_keyword(1, 4, "hile", TOKEN_WHILE);
   }
 
   return TOKEN_IDENTIFIER;
