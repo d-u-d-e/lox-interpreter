@@ -24,6 +24,13 @@ void free_object(obj_t *object)
     FREE(char, str); // FAM
     break;
   }
+  case OBJ_FUNCTION: {
+    // The function only owns the chunk.
+    obj_function_t *function = (obj_function_t *)object;
+    free_chunk(&function->chunk);
+    FREE(obj_function_t, function);
+    break;
+  }
   }
 }
 

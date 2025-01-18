@@ -20,6 +20,15 @@ static obj_t *allocate_obj(size_t size, obj_type_t type)
   return object;
 }
 
+obj_function_t *new_function()
+{
+  obj_function_t *function = ALLOCATE_OBJ(obj_function_t, OBJ_FUNCTION);
+  function->arity = 0;
+  function->name = NULL;
+  init_chunk(&function->chunk);
+  return function;
+}
+
 const obj_string_t *copy_string(const char *chars, int length)
 {
   uint32_t hash = hash_string(chars, length);
@@ -58,12 +67,19 @@ uint32_t hash_string(const char *key, int length)
   return hash;
 }
 
+static void print_function(obj_function_t *function) { printf("<fn %s>", function->name->chars); }
+
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
   case OBJ_TYPE_STRING: {
     const obj_string_t *str = AS_STRING(value);
     printf("%s", str->chars);
+    break;
+  }
+
+  case OBJ_FUNCTION: {
+    print_function(AS_FUNCTION(value));
     break;
   }
   }
