@@ -1,3 +1,8 @@
-fun test() { print "ciao";}
+fun test(a) { 
+    print "test_str"; 
+    fun test_inner() 
+    {
+        print "test_inner_str";
+    }
+}
 print test;
-test();

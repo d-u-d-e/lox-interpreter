@@ -23,11 +23,23 @@ static void runtime_error(const char *format, ...)
   va_end(args);
   fputs("\n", stderr);
 
-  callframe_t *frame = &g_vm.frames[g_vm.frame_count - 1];
-  size_t inst
-    = frame->ip - frame->function->chunk.code - 1; // -1 because ip points to next instruction
-  int line = frame->function->chunk.lines[inst];
-  fprintf(stderr, "[line %d] in script\n", line);
+  // Print the stack trace.
+
+  for(int i = g_vm.frame_count - 1; i >= 0; i--) {
+    callframe_t *frame = &g_vm.frames[i];
+    obj_function_t *function = frame->function;
+    size_t inst
+      = frame->ip - frame->function->chunk.code - 1; // -1 because ip points to next instruction
+
+    fprintf(stderr, "[line %d] in ", function->chunk.lines[inst]);
+    if(function->name == NULL) {
+      fprintf(stderr, "script\n");
+    }
+    else {
+      fprintf(stderr, "%s()\n", function->name->chars);
+    }
+  }
+
   reset_stack();
 }
 
@@ -59,6 +71,43 @@ value_t pop()
 }
 
 static value_t peek(int distance) { return g_vm.stack_top[-1 - distance]; }
+
+static bool call(obj_function_t *function, int arg_count)
+{
+  // Let's make sure the user passed the right number of arguments.
+  if(arg_count != function->arity) {
+    runtime_error("Expected %d arguments but got %d.", function->arity, arg_count);
+    return false;
+  }
+
+  // We need to prepare a new call frame for run(). Enough room?
+  if(g_vm.frame_count == FAMES_MAX) {
+    runtime_error("Stack overflow.");
+    return false;
+  }
+
+  callframe_t *frame = &g_vm.frames[g_vm.frame_count++];
+  frame->function = function;
+  frame->ip = function->chunk.code;
+  // The -1 accounts for the fact that locals (the actual parameters) start at 1.
+  // The first slot is reserved for methods...
+  frame->slots = g_vm.stack_top - arg_count - 1;
+  return true;
+}
+
+static bool call_value(value_t value, int arg_count)
+{
+  if(IS_OBJ(value)) {
+    switch(OBJ_TYPE(value)) {
+    case OBJ_FUNCTION: {
+      return call(AS_FUNCTION(value), arg_count);
+    }
+    default: break; // non callable object type
+    }
+  }
+  runtime_error("Can only call functions and classes.");
+  return false;
+}
 
 static bool isFalsey(value_t value)
 {
@@ -296,6 +345,18 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_CALL: {
+      uint8_t arg_count = READ_BYTE();
+      if(!call_value(peek(arg_count), arg_count)) {
+        // No function object on the stack! Exit
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      // There is a function object on the stack!
+      // We need to update the current frame since run() uses it.
+      frame = &g_vm.frames[g_vm.frame_count - 1];
+      break;
+    }
+
     case OP_RETURN: {
       // exit interpreter
       return INTERPRET_OK;
@@ -320,10 +381,7 @@ interpret_result_t interpret(const char *source)
   // Function is sort of a "function" representing the top level code
 
   push(OBJ_VAL(function));
-  callframe_t *frame = &g_vm.frames[g_vm.frame_count++];
-  frame->function = function;
-  frame->ip = function->chunk.code;
-  frame->slots = g_vm.stack;
+  call(function, 0); // It's not a true call! But it initializes the frame.
 
   return run();
 }
