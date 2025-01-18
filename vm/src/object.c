@@ -67,7 +67,14 @@ uint32_t hash_string(const char *key, int length)
   return hash;
 }
 
-static void print_function(obj_function_t *function) { printf("<fn %s>", function->name->chars); }
+static void print_function(obj_function_t *function)
+{
+  if(function->name == NULL) {
+    printf("<script>");
+    return;
+  }
+  printf("<fn %s>", function->name->chars);
+}
 
 void print_object(value_t value)
 {

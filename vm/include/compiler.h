@@ -1,4 +1,4 @@
 #pragma once
-#include <chunk.h>
+#include <vm.h>
 
-bool compile(const char *source, chunk_t *chunk);
+obj_function_t * compile(const char *source);

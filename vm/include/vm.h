@@ -1,14 +1,25 @@
 #pragma once
 
 #include <chunk.h>
+#include <object.h>
 #include <table.h>
 #include <value.h>
 
-#define STACK_MAX 256
+#define FAMES_MAX 64
+#define STACK_MAX (FAMES_MAX * UINT8_COUNT)
+
+// This represents a single ongoing function call. It is created each time a function is called.
+// The slots field points into the VM's value stack at the first slot usable by this function.
+typedef struct {
+  obj_function_t *function;
+  uint8_t *ip; // Used to return from function call
+  value_t *slots;
+} callframe_t;
 
 typedef struct {
-  chunk_t *chunk;
-  uint8_t *ip;
+  callframe_t frames[FAMES_MAX];
+  int frame_count; // number of ongoing function calls
+
   value_t stack[STACK_MAX];
   value_t *stack_top;
   table_t globals;

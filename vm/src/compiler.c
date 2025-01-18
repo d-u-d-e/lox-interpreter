@@ -44,7 +44,21 @@ typedef struct {
   int depth;    // records the scope where the variable was declared
 } local_t;
 
-typedef struct {
+// Is the compiler compiling a function or the top level script?
+typedef enum {
+  TYPE_FUNCTION,
+  TYPE_SCRIPT,
+} function_type_t;
+
+typedef struct compiler_t {
+  // The enclosing compiler, if any, for the sorrounding function.
+  struct compiler_t *enclosing;
+
+  // The current chunk is always the chunk owned by the function we're in the middle of
+  // compiling.
+  obj_function_t *function;
+  function_type_t type;
+
   local_t locals[UINT8_COUNT];
   int local_count; // tracks how many locals are in scope, i.e. how many array elements are in use
   int scope_depth; // number of blocks sorrounding the current bit of code, zero indicates global
@@ -52,15 +66,14 @@ typedef struct {
 } compiler_t;
 
 parser_t g_parser;
-compiler_t *g_compiler = NULL;
-chunk_t *g_compiling_chunk;
+compiler_t *g_current_compiler = NULL;
 
 static parse_rule_t *get_rule(token_type_t type);
 static void statement();
 static void declaration();
 static void expression();
 
-static chunk_t *curren_chunk() { return g_compiling_chunk; }
+static chunk_t *current_chunk() { return &g_current_compiler->function->chunk; }
 static void error_at(token_t *token, const char *message)
 {
   // Suppress error messages after a panic
@@ -143,7 +156,7 @@ static void synchronize()
   }
 }
 
-static void emit_byte(uint8_t byte) { write_chunk(curren_chunk(), byte, g_parser.previous.line); }
+static void emit_byte(uint8_t byte) { write_chunk(current_chunk(), byte, g_parser.previous.line); }
 static void emit_bytes(uint8_t byte1, uint8_t byte2)
 {
   emit_byte(byte1);
@@ -157,13 +170,13 @@ static int emit_jump(uint8_t instruction)
   emit_byte(0xFF);
   emit_byte(0xFF);
   // Return the offset of the placeholder in order to patch it later
-  return curren_chunk()->count - 2;
+  return current_chunk()->count - 2;
 }
 
 static void emit_loop(int loop_start)
 {
   emit_byte(OP_LOOP);
-  int offset = curren_chunk()->count - loop_start + 2;
+  int offset = current_chunk()->count - loop_start + 2;
   if(offset > UINT16_MAX) {
     error("Loop body too large.");
   }
@@ -174,7 +187,7 @@ static void emit_loop(int loop_start)
 static void emit_return() { emit_byte(OP_RETURN); }
 static uint8_t make_constant(value_t value)
 {
-  int constant = add_constant(curren_chunk(), value);
+  int constant = add_constant(current_chunk(), value);
   if(constant > UINT8_MAX) {
     error("Too many constants in chunk.");
     return 0;
@@ -186,41 +199,65 @@ static void emit_constant(value_t value) { emit_bytes(OP_CONSTANT, make_constant
 static void patch_jump(int offset)
 {
   // The jump value is added to the instruction pointer, so we subtract 2
-  int jump = curren_chunk()->count - offset - 2;
+  int jump = current_chunk()->count - offset - 2;
   if(jump > UINT16_MAX) {
     error("Too much code to jump over.");
   }
   // Big endian
-  curren_chunk()->code[offset] = (jump >> 8) & 0xFFU;
-  curren_chunk()->code[offset + 1] = jump & 0xFFU;
+  current_chunk()->code[offset] = (jump >> 8) & 0xFFU;
+  current_chunk()->code[offset + 1] = jump & 0xFFU;
 }
 
-static void init_compiler(compiler_t *compiler)
+static void init_compiler(compiler_t *compiler, function_type_t type)
 {
+  compiler->enclosing = g_current_compiler;
+  compiler->function = NULL;
+  compiler->type = type;
   compiler->local_count = 0;
   compiler->scope_depth = 0;
-  g_compiler = compiler;
+  compiler->function = new_function();
+  g_current_compiler = compiler;
+
+  if(type != TYPE_SCRIPT) {
+    // Previous token is the function's name
+    compiler->function->name = copy_string(g_parser.previous.start, g_parser.previous.length);
+  }
+
+  // Stack slot 0 is reserved, and no user identifier can refer to it, since its name is the empty
+  // string; it stores the function being called (also works for the top level "function" or script
+  // code)
+  local_t *local = &compiler->locals[compiler->local_count++];
+  local->depth = 0;
+  local->name.start = "";
+  local->name.length = 0;
 }
 
-static void end_compiler()
+static obj_function_t *end_compiler()
 {
   emit_return();
+  obj_function_t *function = g_current_compiler->function;
+
 #ifdef DEBUG_PRINT_CODE
   if(!g_parser.had_error) {
-    disassemble_chunk(curren_chunk(), "code");
+    // The implicit function we create for top level code (the script) has no name
+    disassemble_chunk(current_chunk(), function->name != NULL ? function->name->chars : "<script>");
   }
 #endif
+
+  g_current_compiler = g_current_compiler->enclosing;
+  return function;
 }
 
-static void begin_scope() { g_compiler->scope_depth++; }
+static void begin_scope() { g_current_compiler->scope_depth++; }
 static void end_scope()
 {
-  g_compiler->scope_depth--;
+  g_current_compiler->scope_depth--;
   // Remove all locals that are no longer in scope
-  while(g_compiler->local_count > 0
-        && g_compiler->locals[g_compiler->local_count - 1].depth > g_compiler->scope_depth) {
+  while(g_current_compiler->local_count > 0
+        && g_current_compiler->locals[g_current_compiler->local_count - 1].depth
+             > g_current_compiler->scope_depth) {
     emit_byte(OP_POP);
-    g_compiler->local_count--;
+    g_current_compiler->local_count--;
   }
 }
 
@@ -327,12 +364,12 @@ static int resolve_local(compiler_t *compiler, token_t *name)
 static void add_local(token_t name)
 {
   // Check if there's enough space to add a new local
-  if(g_compiler->local_count == UINT8_COUNT) {
+  if(g_current_compiler->local_count == UINT8_COUNT) {
     error("Too many local variables in function.");
     return;
   }
 
-  local_t *local = &g_compiler->locals[g_compiler->local_count++];
+  local_t *local = &g_current_compiler->locals[g_current_compiler->local_count++];
   local->name = name;
   local->depth = -1; // this means that the variable has not been initialized
 }
@@ -340,7 +377,7 @@ static void add_local(token_t name)
 static void declare_variable()
 {
   // This is where the compiler records the existence of a variable
-  if(g_compiler->scope_depth == 0) {
+  if(g_current_compiler->scope_depth == 0) {
     // We save only locals
     return;
   }
@@ -355,13 +392,13 @@ static void declare_variable()
     }
   */
 
-  for(int i = g_compiler->local_count - 1; i >= 0; i--) {
-    local_t *local = &g_compiler->locals[i];
+  for(int i = g_current_compiler->local_count - 1; i >= 0; i--) {
+    local_t *local = &g_current_compiler->locals[i];
     /*
     If a local variable is owned by a parent scope, exit
     local->depth != -1 is a sentinel value that indicates that the variable has been initialized,
     so not valid here */
-    if(local->depth != -1 && local->depth < g_compiler->scope_depth) {
+    if(local->depth != -1 && local->depth < g_current_compiler->scope_depth) {
       break;
     }
     if(identifier_equal(name, &local->name)) {
@@ -375,7 +412,7 @@ static uint8_t parse_variable(const char *error_message)
 {
   consume(TOKEN_IDENTIFIER, error_message);
   declare_variable();
-  if(g_compiler->scope_depth > 0) {
+  if(g_current_compiler->scope_depth > 0) {
     // Dummy index for locals
     return 0;
   }
@@ -385,14 +422,18 @@ static uint8_t parse_variable(const char *error_message)
 
 static void mark_initialized()
 {
+  if(g_current_compiler->scope_depth == 0) {
+    return;
+  }
   // Change the sentinel value of -1 to the actual depth
-  g_compiler->locals[g_compiler->local_count - 1].depth = g_compiler->scope_depth;
+  g_current_compiler->locals[g_current_compiler->local_count - 1].depth
+    = g_current_compiler->scope_depth;
 }
 
 static void define_variable(uint8_t global)
 {
   // Skip local variables, its value sits on top of the stack and that slot becomes the local
-  if(g_compiler->scope_depth > 0) {
+  if(g_current_compiler->scope_depth > 0) {
     // We only need to mark it initialized
     mark_initialized();
     return;
@@ -404,7 +445,7 @@ static void named_variable(token_t token, bool can_assign)
 {
   // Check if the variable is a local or a global
   uint8_t get_op, set_op;
-  int arg = resolve_local(g_compiler, &token);
+  int arg = resolve_local(g_current_compiler, &token);
   if(arg != -1) {
     // Found local
     get_op = OP_GET_LOCAL;
@@ -484,6 +525,48 @@ static void block()
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
 }
 
+static void function(function_type_t type)
+{
+  compiler_t compiler;
+  init_compiler(&compiler, type);
+  begin_scope();
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after function name.");
+
+  if(!check(TOKEN_RIGHT_PAREN)) {
+    // Parse parameters
+    do {
+      g_current_compiler->function->arity++;
+      if(g_current_compiler->function->arity > 255) {
+        error_at_current("Can't have more than 255 parameters.");
+      }
+      uint8_t constant = parse_variable("Expect parameter name."); // This will be a local variable
+      define_variable(constant);
+    } while(match(TOKEN_COMMA));
+  }
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after parameters.");
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before function body.");
+  block(); // Will parse the closing brace
+
+  // No need to do end_scope() because we discard the compiler here (who cares about its locals...)
+  obj_function_t *function = end_compiler();
+
+  // At runtime, the function object will be on the stack after parsing its declaration.
+  // If it is a global function, it will be followed by a OP_DEFINE_GLOBAL instruction that pops it.
+  emit_bytes(OP_CONSTANT, make_constant(OBJ_VAL(function)));
+}
+
+static void fun_declaration()
+{
+  // Functions are first-class, so we parse the name like a variable.
+  // Inside a block or other function, a function declaration creates a local variable.
+  // At the top level, a function declaration creates a global variable.
+  uint8_t global = parse_variable("Expect function name.");
+  mark_initialized();      // This way a function can refer to itself in the body.
+  function(TYPE_FUNCTION); // Compile the body, leaving the function object on the stack.
+  define_variable(global);
+}
+
 static void expression_statement()
 {
   expression();
@@ -523,7 +606,7 @@ static void print_statement()
 
 static void while_statement()
 {
-  int loop_start = curren_chunk()->count;
+  int loop_start = current_chunk()->count;
   consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
   expression();
   consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
@@ -553,7 +636,7 @@ static void for_statement()
   }
 
   // Parse condition
-  int loop_start = curren_chunk()->count;
+  int loop_start = current_chunk()->count;
   int exit_jump = -1;
 
   if(!match(TOKEN_SEMICOLON)) {
@@ -569,7 +652,7 @@ static void for_statement()
   if(!match(TOKEN_RIGHT_PAREN)) {
     // Jump after the increment
     int body_jump = emit_jump(OP_JUMP);
-    int increment_start = curren_chunk()->count;
+    int increment_start = current_chunk()->count;
     expression();
     emit_byte(OP_POP);
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
@@ -619,6 +702,9 @@ static void declaration()
 {
   if(match(TOKEN_VAR)) {
     var_declaration();
+  }
+  else if(match(TOKEN_FUN)) {
+    fun_declaration();
   }
   else {
     statement();
@@ -697,13 +783,12 @@ parse_rule_t rules[] = {
 
 static parse_rule_t *get_rule(token_type_t type) { return &rules[type]; }
 
-bool compile(const char *source, chunk_t *chunk)
+obj_function_t *compile(const char *source)
 {
   init_scanner(source);
   compiler_t compiler;
-  init_compiler(&compiler);
+  init_compiler(&compiler, TYPE_SCRIPT);
 
-  g_compiling_chunk = chunk;
   g_parser.had_error = false;
   g_parser.panic_mode = false;
 
@@ -713,6 +798,6 @@ bool compile(const char *source, chunk_t *chunk)
     declaration();
   }
 
-  end_compiler();
-  return !g_parser.had_error;
+  obj_function_t *function = end_compiler();
+  return g_parser.had_error ? NULL : function;
 }

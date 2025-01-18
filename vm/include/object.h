@@ -26,7 +26,7 @@ typedef struct {
   struct obj base;
   int arity;
   chunk_t chunk;
-  obj_string_t *name;
+  const obj_string_t *name;
 } obj_function_t;
 
 struct obj_string {

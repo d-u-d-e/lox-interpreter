@@ -9,7 +9,11 @@
 
 vm_t g_vm;
 
-static void reset_stack() { g_vm.stack_top = g_vm.stack; }
+static void reset_stack()
+{
+  g_vm.stack_top = g_vm.stack;
+  g_vm.frame_count = 0;
+}
 
 static void runtime_error(const char *format, ...)
 {
@@ -19,8 +23,10 @@ static void runtime_error(const char *format, ...)
   va_end(args);
   fputs("\n", stderr);
 
-  size_t inst = g_vm.ip - g_vm.chunk->code - 1; // -1 because ip points to next instruction
-  int line = g_vm.chunk->lines[inst];
+  callframe_t *frame = &g_vm.frames[g_vm.frame_count - 1];
+  size_t inst
+    = frame->ip - frame->function->chunk.code - 1; // -1 because ip points to next instruction
+  int line = frame->function->chunk.lines[inst];
   fprintf(stderr, "[line %d] in script\n", line);
   reset_stack();
 }
@@ -87,9 +93,11 @@ static void concatenate()
 
 static interpret_result_t run()
 {
-#define READ_BYTE() (*g_vm.ip++)
-#define READ_CONSTANT() (g_vm.chunk->constants.values[READ_BYTE()])
-#define READ_SHORT() (g_vm.ip += 2, (uint16_t)((g_vm.ip[-2] << 8) | g_vm.ip[-1]))
+  callframe_t *frame = &g_vm.frames[g_vm.frame_count - 1];
+
+#define READ_BYTE() (*frame->ip++)
+#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
+#define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op)                                                                  \
   do {                                                                                             \
@@ -111,7 +119,8 @@ static interpret_result_t run()
       printf(" ]");
     }
     printf("\n");
-    disassemble_instruction(g_vm.chunk, (int)(g_vm.ip - g_vm.chunk->code));
+    disassemble_instruction(&frame->function->chunk,
+                            (int)(frame->ip - frame->function->chunk.code));
 #endif
 
     uint8_t instruction = READ_BYTE();
@@ -144,22 +153,21 @@ static interpret_result_t run()
 
     case OP_GET_LOCAL: {
       /*
-      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom
-      Notice that while it may seem redundant to push a value already somewhere down in the stack
-      it is not, because other instructions look at the stack top. */
+      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom of the
+      frame. Notice that while it may seem redundant to push a value already somewhere down in the
+      stack it is not, because other instructions look at the stack top. */
       uint8_t slot = READ_BYTE();
-      push(g_vm.stack[slot]);
+      push(frame->slots[slot]);
       break;
     }
 
     case OP_SET_LOCAL: {
       /*
-      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom, where
-      the local lives.
-      Again, no pop since this comes from an expression statement. In other words,
-      every expression produces a value. */
+      Next byte holds the argument, i.e. the slot in the stack, starting from the bottom of
+      the frame, where the local lives. Again, no pop since this comes from an expression statement.
+      In other words, every expression produces a value. */
       uint8_t slot = READ_BYTE();
-      g_vm.stack[slot] = peek(0);
+      frame->slots[slot] = peek(0);
       break;
     }
 
@@ -267,7 +275,7 @@ static interpret_result_t run()
 
     case OP_JUMP: {
       uint16_t offset = READ_SHORT();
-      g_vm.ip += offset;
+      frame->ip += offset;
       break;
     }
 
@@ -275,7 +283,7 @@ static interpret_result_t run()
       uint16_t offset = READ_SHORT();
       // Value is not popped, to see why look how logical operators are implemented.
       if(isFalsey(peek(0))) {
-        g_vm.ip += offset;
+        frame->ip += offset;
       }
       break;
     }
@@ -284,7 +292,7 @@ static interpret_result_t run()
       // Basically like OP_JUMP, but the offset is negative.
       // We could have used OP_JUMP, but the trouble is packing the Signed 16 bit integer offset.
       uint16_t offset = READ_SHORT();
-      g_vm.ip -= offset;
+      frame->ip -= offset;
       break;
     }
 
@@ -304,18 +312,18 @@ static interpret_result_t run()
 
 interpret_result_t interpret(const char *source)
 {
-  chunk_t chunk;
-  init_chunk(&chunk);
-
-  if(!compile(source, &chunk)) {
-    free_chunk(&chunk);
+  obj_function_t *function = compile(source);
+  if(function == NULL) {
+    // Compile error
     return INTERPRET_COMPILE_ERROR;
   }
+  // Function is sort of a "function" representing the top level code
 
-  g_vm.chunk = &chunk;
-  g_vm.ip = g_vm.chunk->code;
-  interpret_result_t result = run();
+  push(OBJ_VAL(function));
+  callframe_t *frame = &g_vm.frames[g_vm.frame_count++];
+  frame->function = function;
+  frame->ip = function->chunk.code;
+  frame->slots = g_vm.stack;
 
-  free_chunk(&chunk);
-  return result;
+  return run();
 }
