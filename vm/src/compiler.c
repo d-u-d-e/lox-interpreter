@@ -433,6 +433,13 @@ static int resolve_upvalue(compiler_t *compiler, token_t *name)
     // This way the compiler tracks which variable in the enclosing function needs to be captured.
     return add_upvalue(compiler, (uint8_t)local, true);
   }
+
+  // Look for a local variable beyond the enclosing function
+  int upvalue = resolve_upvalue(compiler->enclosing, name);
+  if(upvalue != -1) {
+    return add_upvalue(compiler, (uint8_t)upvalue, false);
+  }
+
   return -1;
 }
 
@@ -634,6 +641,13 @@ static void function(function_type_t type)
   // At runtime, the function object will be on the stack after parsing its declaration.
   // If it is a global function, it will be followed by a OP_DEFINE_GLOBAL instruction that pops it.
   emit_bytes(OP_CLOSURE, make_constant(OBJ_VAL(function)));
+
+  // Emit other closure data; note how OP_CLOSURE has a variably sized encoding.
+  for(int i = 0; i < function->upvalue_count; i++) {
+    emit_byte(g_current_compiler->upvalues[i].is_local ? 1 : 0);
+    emit_byte(g_current_compiler->upvalues[i].index);
+  }
+
 }
 
 static void fun_declaration()
