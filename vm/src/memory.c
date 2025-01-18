@@ -36,6 +36,13 @@ void free_object(obj_t *object)
     FREE(obj_native_t, native);
     break;
   }
+
+  case OBJ_CLOSURE: {
+    // The object function is not freed! Recall that the closure does not own the function!
+    obj_closure_t *closure = (obj_closure_t *)object;
+    FREE(obj_closure_t, closure);
+    break;
+  }
   }
 }
 

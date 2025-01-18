@@ -27,6 +27,13 @@ obj_native_t *new_native(native_fn_t function)
   return native;
 }
 
+obj_closure_t *new_closure(obj_function_t *function)
+{
+  obj_closure_t *closure = ALLOCATE_OBJ(obj_closure_t, OBJ_CLOSURE);
+  closure->function = function;
+  return closure;
+}
+
 obj_function_t *new_function()
 {
   obj_function_t *function = ALLOCATE_OBJ(obj_function_t, OBJ_FUNCTION);
@@ -94,6 +101,13 @@ void print_object(value_t value)
 
   case OBJ_NATIVE: {
     printf("<native fn>");
+    break;
+  }
+
+  case OBJ_CLOSURE: {
+    // Exactly like OBJ_FUNCTION, because from a user perspective, the closure is just an
+    // implementation detail.
+    print_function(AS_CLOSURE(value)->function);
     break;
   }
 

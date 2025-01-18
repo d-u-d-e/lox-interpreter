@@ -11,7 +11,7 @@
 // This represents a single ongoing function call. It is created each time a function is called.
 // The slots field points into the VM's value stack at the first slot usable by this function.
 typedef struct {
-  obj_function_t *function;
+  obj_closure_t *closure;
   uint8_t *ip; // Used to return from function call
   value_t *slots;
 } callframe_t;

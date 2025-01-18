@@ -33,9 +33,8 @@ static void runtime_error(const char *format, ...)
 
   for(int i = g_vm.frame_count - 1; i >= 0; i--) {
     callframe_t *frame = &g_vm.frames[i];
-    obj_function_t *function = frame->function;
-    size_t inst
-      = frame->ip - frame->function->chunk.code - 1; // -1 because ip points to next instruction
+    obj_function_t *function = frame->closure->function;
+    size_t inst = frame->ip - function->chunk.code - 1; // -1 because ip points to next instruction
 
     fprintf(stderr, "[line %d] in ", function->chunk.lines[inst]);
     if(function->name == NULL) {
@@ -90,11 +89,11 @@ value_t pop()
 
 static value_t peek(int distance) { return g_vm.stack_top[-1 - distance]; }
 
-static bool call(obj_function_t *function, int arg_count)
+static bool call(obj_closure_t *closure, int arg_count)
 {
   // Let's make sure the user passed the right number of arguments.
-  if(arg_count != function->arity) {
-    runtime_error("Expected %d arguments but got %d.", function->arity, arg_count);
+  if(arg_count != closure->function->arity) {
+    runtime_error("Expected %d arguments but got %d.", closure->function->arity, arg_count);
     return false;
   }
 
@@ -105,8 +104,8 @@ static bool call(obj_function_t *function, int arg_count)
   }
 
   callframe_t *frame = &g_vm.frames[g_vm.frame_count++];
-  frame->function = function;
-  frame->ip = function->chunk.code;
+  frame->closure = closure;
+  frame->ip = closure->function->chunk.code;
   // The -1 accounts for the fact that locals (the actual parameters) start at 1.
   // The first slot is reserved for methods...
   frame->slots = g_vm.stack_top - arg_count - 1;
@@ -117,8 +116,10 @@ static bool call_value(value_t value, int arg_count)
 {
   if(IS_OBJ(value)) {
     switch(OBJ_TYPE(value)) {
-    case OBJ_FUNCTION: {
-      return call(AS_FUNCTION(value), arg_count);
+    case OBJ_CLOSURE: {
+      // Bare OBJ_FUNCTION objects are never called by the runtime, as they are wrapped in a closure
+      // obj.
+      return call(AS_CLOSURE(value), arg_count);
     }
     case OBJ_NATIVE: {
       native_fn_t native = AS_NATIVE(value);
@@ -171,7 +172,7 @@ static interpret_result_t run()
   callframe_t *frame = &g_vm.frames[g_vm.frame_count - 1];
 
 #define READ_BYTE() (*frame->ip++)
-#define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
+#define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
 #define READ_SHORT() (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(value_type, op)                                                                  \
@@ -194,8 +195,8 @@ static interpret_result_t run()
       printf(" ]");
     }
     printf("\n");
-    disassemble_instruction(&frame->function->chunk,
-                            (int)(frame->ip - frame->function->chunk.code));
+    disassemble_instruction(&frame->closure->function->chunk,
+                            (int)(frame->ip - frame->closure->function->chunk.code));
 #endif
 
     uint8_t instruction = READ_BYTE();
@@ -383,6 +384,14 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_CLOSURE: {
+      obj_function_t *function = AS_FUNCTION(READ_CONSTANT());
+      // Note that we wrap the compiled function into a closure object on the heap.
+      obj_closure_t *closure = new_closure(function);
+      push(OBJ_VAL(closure));
+      break;
+    }
+
     case OP_RETURN: {
       value_t result = pop(); // The value to be returned to the caller.
       g_vm.frame_count--;
@@ -416,7 +425,9 @@ interpret_result_t interpret(const char *source)
   // Function is sort of a "function" representing the top level code
 
   push(OBJ_VAL(function));
-  call(function, 0); // It's not a true call! But it initializes the frame.
-
+  obj_closure_t *closure = new_closure(function);
+  pop(); // Weird? What is this? Garbage collector...
+  push(OBJ_VAL(closure));
+  call(closure, 0); // It's not a true call! But it initializes the frame.
   return run();
 }

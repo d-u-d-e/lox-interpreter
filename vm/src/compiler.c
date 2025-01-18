@@ -193,7 +193,7 @@ static uint8_t make_constant(value_t value)
 {
   int constant = add_constant(current_chunk(), value);
   if(constant > UINT8_MAX) {
-    error("Too many constants in chunk.");
+    error("Too many constants in one chunk.");
     return 0;
   }
   return (uint8_t)constant;
@@ -580,7 +580,7 @@ static void function(function_type_t type)
 
   // At runtime, the function object will be on the stack after parsing its declaration.
   // If it is a global function, it will be followed by a OP_DEFINE_GLOBAL instruction that pops it.
-  emit_bytes(OP_CONSTANT, make_constant(OBJ_VAL(function)));
+  emit_bytes(OP_CLOSURE, make_constant(OBJ_VAL(function)));
 }
 
 static void fun_declaration()
