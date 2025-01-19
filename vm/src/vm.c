@@ -19,6 +19,7 @@ static void reset_stack()
 {
   g_vm.stack_top = g_vm.stack;
   g_vm.frame_count = 0;
+  g_vm.open_upvalues = NULL;
 }
 
 static void runtime_error(const char *format, ...)
@@ -138,8 +139,34 @@ static bool call_value(value_t value, int arg_count)
 
 static obj_upvalue_t *capture_upvalue(value_t *local)
 {
-  obj_upvalue_t *upvalue = new_upvalue(local);
-  return upvalue;
+  // Start at the upvalue closest to the top of the stack.
+  obj_upvalue_t *prev = NULL;
+  obj_upvalue_t *upvalue = g_vm.open_upvalues;
+  while(upvalue != NULL && upvalue->location > local) {
+    prev = upvalue;
+    upvalue = upvalue->next;
+  }
+
+  if(upvalue != NULL && upvalue->location == local) {
+    // Reuse the same upvalue if it captures the same local variable.
+    return upvalue;
+  }
+  // Two cases:
+  // 1. All open upvalues points to locals above the slot we are looking for or the list is empty.
+  // 2. We went past the slot we are looking for; since the list is sorted, that means there is no
+  // upvalue.
+
+  // Create a new upvalue and insert it into the list in the right position.
+  obj_upvalue_t *new = new_upvalue(local);
+  new->next = upvalue;
+  if(prev == NULL) {
+    // List was empty
+    g_vm.open_upvalues = new;
+  }
+  else {
+    prev->next = new;
+  }
+  return new;
 }
 
 static bool isFalsey(value_t value)

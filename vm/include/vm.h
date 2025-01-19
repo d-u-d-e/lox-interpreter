@@ -25,6 +25,7 @@ typedef struct {
   table_t globals;
   table_t strings; // string interning
   obj_t *objects;
+  obj_upvalue_t *open_upvalues;
 } vm_t;
 
 typedef enum { INTERPRET_OK, INTERPRET_COMPILE_ERROR, INTERPRET_RUNTIME_ERROR } interpret_result_t;

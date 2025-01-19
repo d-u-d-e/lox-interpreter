@@ -48,9 +48,10 @@ struct obj_string {
   char chars[]; // flexible array
 };
 
-typedef struct {
+typedef struct obj_value {
   struct obj base;
   value_t *location;
+  struct obj_value *next; // Linked list
 } obj_upvalue_t;
 
 // Closures are basically functions, but capture the sorroundings locals through upvalues.

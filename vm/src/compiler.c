@@ -40,8 +40,9 @@ typedef struct {
 } parse_rule_t;
 
 typedef struct {
-  token_t name; // used to compare the current identifier to the name of the variable
-  int depth;    // records the scope where the variable was declared
+  token_t name;     // used to compare the current identifier to the name of the variable
+  int depth;        // records the scope where the variable was declared
+  bool is_captured; // true if the variable is captured by a later nested function (closure)
 } local_t;
 
 // Upvalues refer to local variables in an enclosing function
@@ -240,6 +241,7 @@ static void init_compiler(compiler_t *compiler, function_type_t type)
   // code)
   local_t *local = &compiler->locals[compiler->local_count++];
   local->depth = 0;
+  local->is_captured = false;
   local->name.start = "";
   local->name.length = 0;
 }
@@ -268,7 +270,14 @@ static void end_scope()
   while(g_current_compiler->local_count > 0
         && g_current_compiler->locals[g_current_compiler->local_count - 1].depth
              > g_current_compiler->scope_depth) {
-    emit_byte(OP_POP);
+    // Pop the local unless it has been captured by a closure
+    if(g_current_compiler->locals[g_current_compiler->local_count - 1].is_captured) {
+      // At runtime the variable that needs to be moved to the heap (closed) is on top of the stack
+      emit_byte(OP_CLOSE_UPVALUE);
+    }
+    else {
+      emit_byte(OP_POP);
+    }
     g_current_compiler->local_count--;
   }
 }
@@ -431,6 +440,7 @@ static int resolve_upvalue(compiler_t *compiler, token_t *name)
     // We found a local variable in the enclosing function.
     // This returns the operand of OP_GET_UPVALUE, OP_SET_UPVALUE. The current upvalue index!
     // This way the compiler tracks which variable in the enclosing function needs to be captured.
+    compiler->enclosing->locals[local].is_captured = true;
     return add_upvalue(compiler, (uint8_t)local, true);
   }
 
@@ -454,6 +464,7 @@ static void add_local(token_t name)
   local_t *local = &g_current_compiler->locals[g_current_compiler->local_count++];
   local->name = name;
   local->depth = -1; // this means that the variable has not been initialized
+  local->is_captured = false;
 }
 
 static void declare_variable()
@@ -647,7 +658,6 @@ static void function(function_type_t type)
     emit_byte(compiler.upvalues[i].is_local ? 1 : 0);
     emit_byte(compiler.upvalues[i].index);
   }
-
 }
 
 static void fun_declaration()
