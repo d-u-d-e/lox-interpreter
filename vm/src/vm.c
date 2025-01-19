@@ -169,6 +169,16 @@ static obj_upvalue_t *capture_upvalue(value_t *local)
   return new;
 }
 
+static void close_upvalue(value_t *last)
+{
+  while(g_vm.open_upvalues != NULL && g_vm.open_upvalues->location >= last) {
+    obj_upvalue_t *upvalue = g_vm.open_upvalues;
+    upvalue->closed = *upvalue->location;
+    upvalue->location = &upvalue->closed;
+    g_vm.open_upvalues = upvalue->next;
+  }
+}
+
 static bool isFalsey(value_t value)
 {
   return IS_NIL(value) || (IS_BOOL(value) && AS_BOOL(value) == false);
@@ -316,11 +326,13 @@ static interpret_result_t run()
 
     case OP_GET_UPVALUE: {
       uint8_t slot = READ_BYTE();
+      // The location of the upvalue is in the heap!
       push(*frame->closure->upvalues[slot]->location);
       break;
     }
     case OP_SET_UPVALUE: {
       uint8_t slot = READ_BYTE();
+      // The location of the upvalue is in the heap!
       *frame->closure->upvalues[slot]->location = peek(0);
       break;
     }
@@ -450,8 +462,20 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_CLOSE_UPVALUE: {
+      // The variable that needs to be moved to the heap (closed) is on top of the stack.
+      close_upvalue(g_vm.stack_top - 1);
+      pop(); // Pop the variable that was moved to the heap
+      break;
+    }
+
     case OP_RETURN: {
       value_t result = pop(); // The value to be returned to the caller.
+      // Before returning from a function, we need to close the open upvalues! The compiler does not
+      // call end_scope() after parsing a function declaration.
+      // This is the reason close_upvalue does loop until the last stack location for the current
+      // frame.
+      close_upvalue(frame->slots);
       g_vm.frame_count--;
       if(g_vm.frame_count == 0) {
         // Top level, exit

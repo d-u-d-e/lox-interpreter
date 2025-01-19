@@ -51,6 +51,7 @@ struct obj_string {
 typedef struct obj_value {
   struct obj base;
   value_t *location;
+  value_t closed; // Once closed its value matches the value at location (which is on the stack)
   struct obj_value *next; // Linked list
 } obj_upvalue_t;
 
