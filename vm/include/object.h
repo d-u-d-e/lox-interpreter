@@ -16,13 +16,7 @@
 #define AS_NATIVE(value) (((obj_native_t *)AS_OBJ(value))->function)
 #define AS_CLOSURE(value) ((obj_closure_t *)AS_OBJ(value))
 
-typedef enum {
-  OBJ_CLOSURE,
-  OBJ_FUNCTION,
-  OBJ_NATIVE,
-  OBJ_TYPE_STRING,
-  OBJ_UPVALUE
-} obj_type_t;
+typedef enum { OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_TYPE_STRING, OBJ_UPVALUE } obj_type_t;
 
 struct obj {
   obj_type_t type;
@@ -59,10 +53,13 @@ typedef struct {
   value_t *location;
 } obj_upvalue_t;
 
-// Closures are basically functions, but capture the sorroundings locals.
+// Closures are basically functions, but capture the sorroundings locals through upvalues.
+// The number of upvalues is tracked by the function object.
 typedef struct {
   obj_t base;
   obj_function_t *function;
+  obj_upvalue_t **upvalues;
+  int upvalue_count;
 } obj_closure_t;
 
 static inline bool is_obj_type(value_t value, obj_type_t type)

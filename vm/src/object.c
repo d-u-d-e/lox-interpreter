@@ -36,8 +36,20 @@ obj_upvalue_t *new_upvalue(value_t *location)
 
 obj_closure_t *new_closure(obj_function_t *function)
 {
+  // Allocate space for the upvalues; the exact number is computed at compile time
+  obj_upvalue_t **upvalues = ALLOCATE(obj_upvalue_t *, function->upvalue_count);
+
+  // Initialize the upvalues to NULL
+  for(int i = 0; i < function->upvalue_count; i++) {
+    upvalues[i] = NULL;
+  }
+
+  // Note how we initialize the upvalues to NULL before the object creation.
+  // This is important for the garbage collector, to make sure it does not see uninitialized pointers.
   obj_closure_t *closure = ALLOCATE_OBJ(obj_closure_t, OBJ_CLOSURE);
   closure->function = function;
+  closure->upvalues = upvalues;
+  closure->upvalue_count = function->upvalue_count;
   return closure;
 }
 

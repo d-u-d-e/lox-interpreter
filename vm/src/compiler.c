@@ -416,7 +416,7 @@ static int add_upvalue(compiler_t *compiler, uint8_t index, bool is_local)
 
   compiler->upvalues[upvalue_count].is_local = is_local;
   compiler->upvalues[upvalue_count].index = index;
-  return g_current_compiler->function->upvalue_count++;
+  return compiler->function->upvalue_count++;
 }
 
 static int resolve_upvalue(compiler_t *compiler, token_t *name)
@@ -533,7 +533,7 @@ static void named_variable(token_t token, bool can_assign)
     get_op = OP_GET_LOCAL;
     set_op = OP_SET_LOCAL;
   }
-  else if(arg = resolve_upvalue(g_current_compiler, &token) != -1) {
+  else if((arg = resolve_upvalue(g_current_compiler, &token)) != -1) {
     // We found a local variable in a sorrounding function
     get_op = OP_GET_UPVALUE;
     set_op = OP_SET_UPVALUE;
@@ -623,8 +623,8 @@ static void function(function_type_t type)
   if(!check(TOKEN_RIGHT_PAREN)) {
     // Parse parameters
     do {
-      g_current_compiler->function->arity++;
-      if(g_current_compiler->function->arity > 255) {
+      compiler.function->arity++;
+      if(compiler.function->arity > 255) {
         error_at_current("Can't have more than 255 parameters.");
       }
       uint8_t constant = parse_variable("Expect parameter name."); // This will be a local variable
@@ -644,8 +644,8 @@ static void function(function_type_t type)
 
   // Emit other closure data; note how OP_CLOSURE has a variably sized encoding.
   for(int i = 0; i < function->upvalue_count; i++) {
-    emit_byte(g_current_compiler->upvalues[i].is_local ? 1 : 0);
-    emit_byte(g_current_compiler->upvalues[i].index);
+    emit_byte(compiler.upvalues[i].is_local ? 1 : 0);
+    emit_byte(compiler.upvalues[i].index);
   }
 
 }

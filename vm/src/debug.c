@@ -152,7 +152,7 @@ int disassemble_instruction(chunk_t *chunk, int offset)
     for(int i = 0; i < function->upvalue_count; i++) {
       uint8_t is_local = chunk->code[offset++];
       uint8_t index = chunk->code[offset++];
-      printf("%04d      |                     %s %d\n", offset - 2, is_local ? "local" : "upvalue",
+      printf("%04d    |                     %s %d\n", offset - 2, is_local ? "local" : "upvalue",
              index);
     }
 

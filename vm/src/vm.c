@@ -136,6 +136,12 @@ static bool call_value(value_t value, int arg_count)
   return false;
 }
 
+static obj_upvalue_t *capture_upvalue(value_t *local)
+{
+  obj_upvalue_t *upvalue = new_upvalue(local);
+  return upvalue;
+}
+
 static bool isFalsey(value_t value)
 {
   return IS_NIL(value) || (IS_BOOL(value) && AS_BOOL(value) == false);
@@ -281,6 +287,17 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_GET_UPVALUE: {
+      uint8_t slot = READ_BYTE();
+      push(*frame->closure->upvalues[slot]->location);
+      break;
+    }
+    case OP_SET_UPVALUE: {
+      uint8_t slot = READ_BYTE();
+      *frame->closure->upvalues[slot]->location = peek(0);
+      break;
+    }
+
     case OP_EQUAL: {
       value_t b = pop();
       value_t a = pop();
@@ -386,9 +403,23 @@ static interpret_result_t run()
 
     case OP_CLOSURE: {
       obj_function_t *function = AS_FUNCTION(READ_CONSTANT());
-      // Note that we wrap the compiled function into a closure object on the heap.
+      // Note that we wrap the compiled function into a closure object.
       obj_closure_t *closure = new_closure(function);
       push(OBJ_VAL(closure));
+
+      // Fill the upvalue array
+      for(int i = 0; i < closure->upvalue_count; i++) {
+        uint8_t is_local = READ_BYTE();
+        uint8_t index = READ_BYTE();
+        // 'frame' refers to the current enclosing function
+        if(is_local) {
+          closure->upvalues[i] = capture_upvalue(frame->slots + index);
+        }
+        else {
+          closure->upvalues[i] = frame->closure->upvalues[index];
+        }
+      }
+
       break;
     }
 

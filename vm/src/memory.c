@@ -20,8 +20,7 @@ void free_object(obj_t *object)
 {
   switch(object->type) {
   case OBJ_TYPE_STRING: {
-    obj_string_t *str = (obj_string_t *)object;
-    FREE(char, str); // FAM
+    FREE(char, object); // FAM
     break;
   }
   case OBJ_FUNCTION: {
@@ -32,15 +31,17 @@ void free_object(obj_t *object)
     break;
   }
   case OBJ_NATIVE: {
-    obj_native_t *native = (obj_native_t *)object;
-    FREE(obj_native_t, native);
+    FREE(obj_native_t, object);
     break;
   }
 
   case OBJ_CLOSURE: {
-    // The object function is not freed! Recall that the closure does not own the function!
+    // The closure owns the array of upvalues, but not the upvalues.
     obj_closure_t *closure = (obj_closure_t *)object;
-    FREE(obj_closure_t, closure);
+    FREE_ARRAY(obj_upvalue_t *, closure->upvalues, closure->upvalue_count);
+
+    // The object function is not freed!
+    FREE(obj_closure_t, object);
     break;
   }
 
