@@ -308,10 +308,11 @@ static interpret_result_t run()
     case OP_DEFINE_GLOBAL: {
       const obj_string_t *name = READ_STRING();
       // Can redefine globals
-      // TODO: understand why pop after table set
-      table_set(&g_vm.globals, name, peek(0));
       // Recall that this instruction comes from a declaration(), not an expression statement
       // so we do the pop here
+      // Note pop after table set: GC may trigger after a pop(), and during table_set()
+      // thus mistakenly collecting the string.
+      table_set(&g_vm.globals, name, peek(0));
       pop();
       break;
     }
