@@ -182,6 +182,10 @@ static void mark_roots()
 
   // Variables allocated by the compiler are also roots
   mark_compiler_roots();
+
+  // Strings are interned by the VM, so we deliberately not consider them to be roots.
+  // But we don't want dangling pointers in the string table!
+  // The right phase to remove them is between the mark and sweep phases
 }
 
 static void trace_references()
@@ -193,6 +197,32 @@ static void trace_references()
   }
 }
 
+static void sweep()
+{
+  obj_t *previous = NULL;
+  obj_t *object = g_vm.objects;
+  while(object != NULL) {
+    if(object->is_marked) {
+      // Set it white for the next cycle
+      object->is_marked = false;
+      previous = object;
+      object = object->next;
+    }
+    else {
+      obj_t *unreached = object;
+      object = object->next;
+      // Unlink it
+      if(previous != NULL) {
+        previous->next = object;
+      }
+      else {
+        g_vm.objects = object;
+      }
+      free_object(unreached);
+    }
+  }
+}
+
 void collect_garbage()
 {
 #ifdef DEBUG_LOG_GC
@@ -201,6 +231,10 @@ void collect_garbage()
 
   mark_roots();
   trace_references();
+  // Remove white strings from the set of interned strings,
+  // since they are not considered roots
+  table_remove_white(&g_vm.strings);
+  sweep();
 
 #ifdef DEBUG_LOG_GC
   printf("-- gc end\n");

@@ -22,3 +22,4 @@ bool table_delete(table_t *table, const obj_string_t *key);
 void table_add_all(const table_t *from, table_t *to);
 const obj_string_t *table_find_string(const table_t *table, const char *chars, int length, uint32_t hash);
 void mark_table(table_t *table);
+void table_remove_white(table_t *table);
