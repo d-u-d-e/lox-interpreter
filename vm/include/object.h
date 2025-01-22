@@ -5,7 +5,7 @@
 #include <value.h>
 
 #define OBJ_TYPE(value) (AS_OBJ(value)->type)
-#define IS_STRING(value) is_obj_type(value, OBJ_TYPE_STRING)
+#define IS_STRING(value) is_obj_type(value, OBJ_STRING)
 #define IS_FUNCTION(value) is_obj_type(value, OBJ_FUNCTION)
 #define IS_NATIVE(value) is_obj_type(value, OBJ_NATIVE)
 #define IS_CLOSURE(value) is_obj_type(value, OBJ_CLOSURE)
@@ -16,10 +16,11 @@
 #define AS_NATIVE(value) (((obj_native_t *)AS_OBJ(value))->function)
 #define AS_CLOSURE(value) ((obj_closure_t *)AS_OBJ(value))
 
-typedef enum { OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_TYPE_STRING, OBJ_UPVALUE } obj_type_t;
+typedef enum { OBJ_CLOSURE, OBJ_FUNCTION, OBJ_NATIVE, OBJ_STRING, OBJ_UPVALUE } obj_type_t;
 
 struct obj {
   obj_type_t type;
+  bool is_marked; // for GC
   struct obj *next;
 };
 
@@ -48,11 +49,12 @@ struct obj_string {
   char chars[]; // flexible array
 };
 
-typedef struct obj_value {
+typedef struct obj_upvalue {
   struct obj base;
   value_t *location;
-  value_t closed; // Once closed its value matches the value at location (which is on the stack)
-  struct obj_value *next; // Linked list
+  value_t closed; // Once closed its value matches the value at location (which is on the stack);
+                  // after that location points to &closed
+  struct obj_upvalue *next; // Linked list
 } obj_upvalue_t;
 
 // Closures are basically functions, but capture the sorroundings locals through upvalues.

@@ -64,6 +64,10 @@ void init_vm()
 {
   reset_stack();
   g_vm.objects = NULL;
+  g_vm.gray_count = 0;
+  g_vm.gray_capacity = 0;
+  g_vm.gray_stack = NULL;
+
   init_table(&g_vm.globals);
   init_table(&g_vm.strings);
   define_native("clock", clock_native);

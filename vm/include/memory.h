@@ -16,3 +16,6 @@
 void *reallocate(void *pointer, size_t old_size, size_t new_size);
 void free_objects();
 void free_object(obj_t *object);
+void mark_value(value_t value);
+void mark_object(obj_t *object);
+void collect_garbage();

@@ -133,7 +133,8 @@ bool table_delete(table_t *table, const obj_string_t *key)
   return true;
 }
 
-const obj_string_t *table_find_string(const table_t *table, const char *chars, int length, uint32_t hash)
+const obj_string_t *table_find_string(const table_t *table, const char *chars, int length,
+                                      uint32_t hash)
 {
   if(table->count == 0) {
     return NULL;
@@ -156,4 +157,13 @@ const obj_string_t *table_find_string(const table_t *table, const char *chars, i
     index = (index + 1) % table->capacity;
   }
   return NULL;
+}
+
+void mark_table(table_t *table)
+{
+  for(int i = 0; i < table->capacity; i++) {
+    entry_t *entry = &table->entries[i];
+    mark_object((obj_t *)entry->key);
+    mark_value(entry->value);
+  }
 }

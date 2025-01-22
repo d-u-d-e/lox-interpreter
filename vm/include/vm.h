@@ -26,6 +26,10 @@ typedef struct {
   table_t strings; // string interning
   obj_t *objects;
   obj_upvalue_t *open_upvalues;
+
+  int gray_count;
+  int gray_capacity;
+  obj_t **gray_stack; // Owned by the VM
 } vm_t;
 
 typedef enum { INTERPRET_OK, INTERPRET_COMPILE_ERROR, INTERPRET_RUNTIME_ERROR } interpret_result_t;

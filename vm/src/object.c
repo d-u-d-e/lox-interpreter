@@ -12,10 +12,15 @@ static obj_t *allocate_obj(size_t size, obj_type_t type)
 {
   obj_t *object = (obj_t *)reallocate(NULL, 0, size);
   object->type = type;
+  object->is_marked = false;
 
   // link into VM object list
   object->next = g_vm.objects;
   g_vm.objects = object;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p allocate %zu for %d\n", object, size, type);
+#endif
 
   return object;
 }
@@ -88,7 +93,7 @@ obj_string_t *allocate_string(int length)
 {
   obj_string_t *res = ALLOCATE(obj_string_t, sizeof(obj_string_t) + length + 1);
   res->length = length;
-  res->base.type = OBJ_TYPE_STRING;
+  res->base.type = OBJ_STRING;
   return res;
 }
 
@@ -115,7 +120,7 @@ static void print_function(obj_function_t *function)
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
-  case OBJ_TYPE_STRING: {
+  case OBJ_STRING: {
     const obj_string_t *str = AS_STRING(value);
     printf("%s", str->chars);
     break;

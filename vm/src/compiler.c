@@ -1,5 +1,6 @@
 #include <common.h>
 #include <compiler.h>
+#include <memory.h>
 #include <object.h>
 #include <scanner.h>
 #include <stdio.h>
@@ -923,4 +924,13 @@ obj_function_t *compile(const char *source)
 
   obj_function_t *function = end_compiler();
   return g_parser.had_error ? NULL : function;
+}
+
+void mark_compiler_roots()
+{
+  compiler_t *compiler = g_current_compiler;
+  while(compiler != NULL) {
+    mark_object((obj_t *)compiler->function);
+    compiler = compiler->enclosing;
+  }
 }
