@@ -75,17 +75,20 @@ obj_string_t *copy_string(const char *chars, int length)
   uint32_t hash = hash_string(chars, length);
   obj_string_t *interned = table_find_string(&g_vm.strings, chars, length, hash);
   if(interned != NULL) {
-    // return the existing string object
+    // Return the existing string object
     return interned;
   }
 
-  // different string must be allocated
+  // Different string must be allocated
   obj_string_t *res = allocate_string(length);
   memcpy(res->chars, chars, length);
   res->chars[length] = '\0';
   res->hash = hash;
-  // intern the string
+  // Intern the string: note that GC can run, so we must make the brand new string reachable by
+  // pushing it onto the stack
+  push(OBJ_VAL(res));
   table_set(&g_vm.strings, res, NIL_VAL);
+  pop();
   return res;
 }
 

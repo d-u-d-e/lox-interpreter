@@ -1,4 +1,9 @@
-var a = "ciao";
-print "hello";
-a = "mondo";
-var b = "world";
+{
+    var a = "ciao";
+    print "hello";
+    a = "mondo";
+    var b = "world";
+    var c = "test";
+    var d = "test2";
+    var e = "test3";
+}
