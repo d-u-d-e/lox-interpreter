@@ -70,10 +70,10 @@ obj_function_t *new_function()
   return function;
 }
 
-const obj_string_t *copy_string(const char *chars, int length)
+obj_string_t *copy_string(const char *chars, int length)
 {
   uint32_t hash = hash_string(chars, length);
-  const obj_string_t *interned = table_find_string(&g_vm.strings, chars, length, hash);
+  obj_string_t *interned = table_find_string(&g_vm.strings, chars, length, hash);
   if(interned != NULL) {
     // return the existing string object
     return interned;
@@ -121,7 +121,7 @@ void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
   case OBJ_STRING: {
-    const obj_string_t *str = AS_STRING(value);
+    obj_string_t *str = AS_STRING(value);
     printf("%s", str->chars);
     break;
   }

@@ -68,9 +68,12 @@ void init_vm()
   g_vm.gray_capacity = 0;
   g_vm.gray_stack = NULL;
 
+  g_vm.bytes_allocated = 0;
+  g_vm.next_gc = 1024 * 1024;
+
   init_table(&g_vm.globals);
   init_table(&g_vm.strings);
-  define_native("clock", clock_native);
+  // define_native("clock", clock_native);
 }
 
 void free_vm()
@@ -190,8 +193,8 @@ static bool isFalsey(value_t value)
 
 static void concatenate()
 {
-  const obj_string_t *b = AS_STRING(pop());
-  const obj_string_t *a = AS_STRING(pop());
+  obj_string_t *b = AS_STRING(pop());
+  obj_string_t *a = AS_STRING(pop());
   int new_length = a->length + b->length;
 
   obj_string_t *res = allocate_string(new_length);
@@ -200,8 +203,7 @@ static void concatenate()
   res->chars[new_length] = '\0';
   res->hash = hash_string(res->chars, new_length);
 
-  const obj_string_t *interned
-    = table_find_string(&g_vm.strings, res->chars, new_length, res->hash);
+  obj_string_t *interned = table_find_string(&g_vm.strings, res->chars, new_length, res->hash);
   if(interned != NULL) {
     // we must keep using the interned string
     free_object((obj_t *)res);
@@ -295,7 +297,7 @@ static interpret_result_t run()
     }
 
     case OP_GET_GLOBAL: {
-      const obj_string_t *name = READ_STRING();
+      obj_string_t *name = READ_STRING();
       value_t value;
       if(!table_get(&g_vm.globals, name, &value)) {
         runtime_error("Undefined variable '%s'.", name->chars);
@@ -306,7 +308,7 @@ static interpret_result_t run()
     }
 
     case OP_DEFINE_GLOBAL: {
-      const obj_string_t *name = READ_STRING();
+      obj_string_t *name = READ_STRING();
       // Can redefine globals
       // Recall that this instruction comes from a declaration(), not an expression statement
       // so we do the pop here
@@ -318,7 +320,7 @@ static interpret_result_t run()
     }
 
     case OP_SET_GLOBAL: {
-      const obj_string_t *name = READ_STRING();
+      obj_string_t *name = READ_STRING();
       if(table_set(&g_vm.globals, name, peek(0))) {
         // table_set adds it even if undefined
         table_delete(&g_vm.globals, name);

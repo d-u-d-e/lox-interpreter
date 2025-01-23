@@ -10,8 +10,8 @@
 #define IS_NATIVE(value) is_obj_type(value, OBJ_NATIVE)
 #define IS_CLOSURE(value) is_obj_type(value, OBJ_CLOSURE)
 
-#define AS_STRING(value) ((const obj_string_t *)AS_OBJ(value))
-#define AS_CSTRING(value) (((const obj_string_t *)AS_OBJ(value))->chars)
+#define AS_STRING(value) ((obj_string_t *)AS_OBJ(value))
+#define AS_CSTRING(value) (((obj_string_t *)AS_OBJ(value))->chars)
 #define AS_FUNCTION(value) ((obj_function_t *)AS_OBJ(value))
 #define AS_NATIVE(value) (((obj_native_t *)AS_OBJ(value))->function)
 #define AS_CLOSURE(value) ((obj_closure_t *)AS_OBJ(value))
@@ -29,7 +29,7 @@ typedef struct {
   int arity;
   int upvalue_count;
   chunk_t chunk;
-  const obj_string_t *name;
+  obj_string_t *name;
 } obj_function_t;
 
 // Native functions are implemented in C and have a simpler representation than Lox functions.
@@ -77,5 +77,5 @@ obj_closure_t *new_closure(obj_function_t *function);
 obj_function_t *new_function();
 obj_string_t *allocate_string(int length);
 uint32_t hash_string(const char *key, int length);
-const obj_string_t *copy_string(const char *chars, int length);
+obj_string_t *copy_string(const char *chars, int length);
 void print_object(value_t value);

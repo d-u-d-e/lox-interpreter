@@ -1,5 +1,3 @@
 var a = "ciao";
-var bb = "hello";
-a = "mondo";
-var ccc = "world";
-print a;
+print "hello";
+var b = "mondo";

@@ -30,6 +30,10 @@ typedef struct {
   int gray_count;
   int gray_capacity;
   obj_t **gray_stack; // Owned by the VM
+
+  size_t bytes_allocated; // Total memory used by the VM
+  size_t next_gc; // Threshold for next GC
+
 } vm_t;
 
 typedef enum { INTERPRET_OK, INTERPRET_COMPILE_ERROR, INTERPRET_RUNTIME_ERROR } interpret_result_t;

@@ -17,7 +17,7 @@ void free_table(table_t *table)
   init_table(table);
 }
 
-static entry_t *find_entry(entry_t *entries, int capacity, const obj_string_t *key)
+static entry_t *find_entry(entry_t *entries, int capacity, obj_string_t *key)
 {
   uint32_t index = key->hash % capacity;
   entry_t *tombestone = NULL;
@@ -71,7 +71,7 @@ static void adjust_capacity(table_t *table, int capacity)
   table->capacity = capacity;
 }
 
-bool table_set(table_t *table, const obj_string_t *key, value_t value)
+bool table_set(table_t *table, obj_string_t *key, value_t value)
 {
   if(table->count + 1 > table->capacity * TABLE_MAX_LOAD_FACTOR) {
     int cap = GROW_CAPACITY(table->capacity);
@@ -90,17 +90,17 @@ bool table_set(table_t *table, const obj_string_t *key, value_t value)
   return is_new_key;
 }
 
-void table_add_all(const table_t *from, table_t *to)
+void table_add_all(table_t *from, table_t *to)
 {
   for(int i = 0; i < from->capacity; i++) {
-    const entry_t *entry = &from->entries[i];
+    entry_t *entry = &from->entries[i];
     if(entry->key != NULL) {
       table_set(to, entry->key, entry->value);
     }
   }
 }
 
-bool table_get(const table_t *table, const obj_string_t *key, value_t *value)
+bool table_get(table_t *table, obj_string_t *key, value_t *value)
 {
   // ensure to not access the entries array if null
   if(table->count == 0) {
@@ -115,7 +115,7 @@ bool table_get(const table_t *table, const obj_string_t *key, value_t *value)
   return true;
 }
 
-bool table_delete(table_t *table, const obj_string_t *key)
+bool table_delete(table_t *table, obj_string_t *key)
 {
   // ensure to not access the entries array if null
   if(table->count == 0) {
@@ -133,8 +133,7 @@ bool table_delete(table_t *table, const obj_string_t *key)
   return true;
 }
 
-const obj_string_t *table_find_string(const table_t *table, const char *chars, int length,
-                                      uint32_t hash)
+obj_string_t *table_find_string(table_t *table, const char *chars, int length, uint32_t hash)
 {
   if(table->count == 0) {
     return NULL;
