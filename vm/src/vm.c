@@ -52,7 +52,7 @@ static void runtime_error(const char *format, ...)
 static void define_native(const char *name, native_fn_t function)
 {
   // Storing the function name and the function itself on the stack prevents the GC from collecting
-  // them.
+  // them. Recall that GC can run after any allocation is performed.
   push(OBJ_VAL(copy_string(name, (int)strlen(name))));
   push(OBJ_VAL(new_native(function)));
   table_set(&g_vm.globals, AS_STRING(g_vm.stack[0]), g_vm.stack[1]);
@@ -73,7 +73,7 @@ void init_vm()
 
   init_table(&g_vm.globals);
   init_table(&g_vm.strings);
-  // define_native("clock", clock_native);
+  define_native("clock", clock_native);
 }
 
 void free_vm()
@@ -309,11 +309,11 @@ static interpret_result_t run()
 
     case OP_DEFINE_GLOBAL: {
       obj_string_t *name = READ_STRING();
-      // Can redefine globals
-      // Recall that this instruction comes from a declaration(), not an expression statement
-      // so we do the pop here
-      // Note pop after table set: GC may trigger after a pop(), and during table_set()
-      // thus mistakenly collecting the string.
+      /* Can redefine globals
+      Recall that this instruction comes from a declaration(), not an expression statement
+      so we do the pop here.
+      Note pop after table set: GC may trigger after a pop(), and during table_set()
+      thus mistakenly collecting the string. */
       table_set(&g_vm.globals, name, peek(0));
       pop();
       break;
@@ -515,7 +515,9 @@ interpret_result_t interpret(const char *source)
 
   push(OBJ_VAL(function));
   obj_closure_t *closure = new_closure(function);
-  pop(); // Weird? What is this? Garbage collector...
+  pop(); // Weird? What is this?
+  // Well the GC might decide to collect the function object since it is not referenced at this
+  // time! This can happen when we do new_closure()
   push(OBJ_VAL(closure));
   call(closure, 0); // It's not a true call! But it initializes the frame.
   return run();

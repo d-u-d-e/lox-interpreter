@@ -201,6 +201,7 @@ static void emit_return()
 }
 static uint8_t make_constant(value_t value)
 {
+  // The constant may be heap-allocated
   int constant = add_constant(current_chunk(), value);
   if(constant > UINT8_MAX) {
     error("Too many constants in one chunk.");

@@ -91,9 +91,8 @@ obj_string_t *copy_string(const char *chars, int length)
 
 obj_string_t *allocate_string(int length)
 {
-  obj_string_t *res = ALLOCATE(obj_string_t, sizeof(obj_string_t) + length + 1);
+  obj_string_t *res = (obj_string_t *)allocate_obj(sizeof(obj_string_t) + length + 1, OBJ_STRING);
   res->length = length;
-  res->base.type = OBJ_STRING;
   return res;
 }
 

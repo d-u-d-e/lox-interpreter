@@ -1,5 +1,6 @@
 #include <chunk.h>
 #include <memory.h>
+#include <vm.h>
 
 void init_chunk(chunk_t *chunk)
 {
@@ -34,7 +35,12 @@ void write_chunk(chunk_t *chunk, uint8_t byte, int line)
 
 int add_constant(chunk_t *c, value_t value)
 {
+  /* The constant may be heap-allocated, but may not be reachable
+  If the GC triggers, the constant will be collected!
+  It can happen because the array might need to grow! We make it reachable by
+  pushing it on the stack. */
+  push(value);
   write_value_array(&c->constants, value);
-  // return the index of the constant
-  return c->constants.count - 1;
+  pop();
+  return c->constants.count - 1; // return the index of the constant
 }
