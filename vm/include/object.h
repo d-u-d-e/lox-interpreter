@@ -82,6 +82,7 @@ typedef struct {
 typedef struct {
   obj_t base;
   obj_string_t *name;
+  table_t methods;
 } obj_class_t;
 
 typedef struct {

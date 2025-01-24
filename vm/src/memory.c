@@ -76,6 +76,8 @@ void free_object(obj_t *object)
   }
 
   case OBJ_CLASS: {
+    obj_class_t *klass = (obj_class_t *)object;
+    free_table(&klass->methods);
     FREE(obj_class_t, object);
     break;
   }
@@ -155,6 +157,7 @@ static void blacken_object(obj_t *object)
   case OBJ_CLASS: {
     obj_class_t *klass = (obj_class_t *)object;
     mark_object((obj_t *)klass->name);
+    mark_table(&klass->methods);
     break;
   }
 

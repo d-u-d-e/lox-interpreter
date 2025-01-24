@@ -183,7 +183,7 @@ static obj_upvalue_t *capture_upvalue(value_t *local)
   return new;
 }
 
-static void close_upvalue(value_t *last)
+static void close_upvalues(value_t *last)
 {
   while(g_vm.open_upvalues != NULL && g_vm.open_upvalues->location >= last) {
     obj_upvalue_t *upvalue = g_vm.open_upvalues;
@@ -191,6 +191,16 @@ static void close_upvalue(value_t *last)
     upvalue->location = &upvalue->closed;
     g_vm.open_upvalues = upvalue->next;
   }
+}
+
+static void define_method(obj_string_t *name)
+{
+  // On the stack we find the closure of the method!
+  value_t method = peek(0);
+  // Right below the class!
+  obj_class_t *klass = AS_CLASS(peek(1));
+  table_set(&klass->methods, name, method);
+  pop(); // Pop the closure
 }
 
 static bool isFalsey(value_t value)
@@ -519,7 +529,7 @@ static interpret_result_t run()
 
     case OP_CLOSE_UPVALUE: {
       // The variable that needs to be moved to the heap (closed) is on top of the stack.
-      close_upvalue(g_vm.stack_top - 1);
+      close_upvalues(g_vm.stack_top - 1);
       pop(); // Pop the variable that was moved to the heap
       break;
     }
@@ -528,9 +538,9 @@ static interpret_result_t run()
       value_t result = pop(); // The value to be returned to the caller.
       // Before returning from a function, we need to close the open upvalues! The compiler does not
       // call end_scope() after parsing a function declaration.
-      // This is the reason close_upvalue does loop until the last stack location for the current
+      // This is the reason close_upvalues does loop until the last stack location for the current
       // frame.
-      close_upvalue(frame->slots);
+      close_upvalues(frame->slots);
       g_vm.frame_count--;
       if(g_vm.frame_count == 0) {
         // Top level, exit
@@ -545,6 +555,11 @@ static interpret_result_t run()
 
     case OP_CLASS: {
       push(OBJ_VAL(new_class(READ_STRING())));
+      break;
+    }
+
+    case OP_METHOD: {
+      define_method(READ_STRING());
       break;
     }
     }

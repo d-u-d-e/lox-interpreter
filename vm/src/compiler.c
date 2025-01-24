@@ -687,6 +687,22 @@ static void fun_declaration()
   define_variable(global);
 }
 
+static void method()
+{
+  consume(TOKEN_IDENTIFIER, "Expect method name.");
+  uint8_t constant = identifier_constant(&g_parser.previous);
+
+  // Parse the body
+  // This emits the code to create a closure and leave it on top of the stack
+  function_type_t type = TYPE_FUNCTION;
+  function(type);
+
+  emit_bytes(OP_METHOD, constant); // This is the name of the method
+
+  // We need the class to bind the method to!
+  // But class_declaration() genereted code to leave the class on the stack, right below the closure!
+}
+
 static void expression_statement()
 {
   expression();
@@ -814,14 +830,26 @@ static void class_declaration()
 {
   consume(TOKEN_IDENTIFIER, "Expect class name.");
   // Add the class name to the sorrounding function's constant table
+  token_t class_name = g_parser.previous;
   uint8_t name_constant = identifier_constant(&g_parser.previous);
   declare_variable();
 
   emit_bytes(OP_CLASS, name_constant);
   define_variable(name_constant);
 
+  // named_variable will generate code to load a variable with the given name on the stack!
+  // This means that when we execute OP_METHOD, the stack has the method's closure on top, with
+  // the class right under! The VM cannot assume that the class is global!
+  named_variable(class_name, false);
+
+  // Parse body of class
   consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  while(!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
+    method();
+  }
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+  // We no longer need the class object on the stack once methods have been interpreted
+  emit_byte(OP_POP);
 }
 
 static void statement()
