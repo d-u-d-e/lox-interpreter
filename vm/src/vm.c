@@ -120,20 +120,27 @@ static bool call(obj_closure_t *closure, int arg_count)
   return true;
 }
 
-static bool call_value(value_t value, int arg_count)
+static bool call_value(value_t callee, int arg_count)
 {
-  if(IS_OBJ(value)) {
-    switch(OBJ_TYPE(value)) {
+  if(IS_OBJ(callee)) {
+    switch(OBJ_TYPE(callee)) {
     case OBJ_CLOSURE: {
       // Bare OBJ_FUNCTION objects are never called by the runtime, as they are wrapped in a closure
       // obj.
-      return call(AS_CLOSURE(value), arg_count);
+      return call(AS_CLOSURE(callee), arg_count);
     }
     case OBJ_NATIVE: {
-      native_fn_t native = AS_NATIVE(value);
+      native_fn_t native = AS_NATIVE(callee);
       value_t result = native(arg_count, g_vm.stack_top - arg_count);
       g_vm.stack_top -= arg_count + 1;
       push(result);
+      return true;
+    }
+
+    case OBJ_CLASS: {
+      // Create a new instance of the class.
+      obj_class_t *klass = AS_CLASS(callee);
+      g_vm.stack_top[-arg_count - 1] = OBJ_VAL(new_instance(klass));
       return true;
     }
 

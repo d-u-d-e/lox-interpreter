@@ -70,6 +70,14 @@ obj_function_t *new_function()
   return function;
 }
 
+obj_instance_t *new_instance(obj_class_t *klass)
+{
+  obj_instance_t *instance = ALLOCATE_OBJ(obj_instance_t, OBJ_INSTANCE);
+  instance->klass = klass;
+  init_table(&instance->fields);
+  return instance;
+}
+
 obj_class_t *new_class(obj_string_t *name)
 {
   obj_class_t *klass = ALLOCATE_OBJ(obj_class_t, OBJ_CLASS);
@@ -129,6 +137,11 @@ static void print_function(obj_function_t *function)
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
+  case OBJ_INSTANCE: {
+    printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
+    break;
+  }
+
   case OBJ_CLASS: {
     printf("%s", AS_CLASS(value)->name->chars);
     break;

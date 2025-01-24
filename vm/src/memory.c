@@ -79,6 +79,13 @@ void free_object(obj_t *object)
     FREE(obj_class_t, object);
     break;
   }
+
+  case OBJ_INSTANCE: {
+    obj_instance_t *instance = (obj_instance_t *)object;
+    free_table(&instance->fields);
+    FREE(obj_instance_t, object);
+    break;
+  }
   }
 }
 
@@ -150,6 +157,14 @@ static void blacken_object(obj_t *object)
     mark_object((obj_t *)klass->name);
     break;
   }
+
+  case OBJ_INSTANCE: {
+    obj_instance_t *instance = (obj_instance_t *)object;
+    mark_object((obj_t *)instance->klass);
+    mark_table(&instance->fields);
+    break;
+  }
+
   case OBJ_CLOSURE: {
     obj_closure_t *closure = (obj_closure_t *)object;
     mark_object((obj_t *)closure->function);
