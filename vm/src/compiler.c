@@ -248,6 +248,11 @@ static void init_compiler(compiler_t *compiler, function_type_t type)
   local->name.length = 0;
 }
 
+static uint8_t identifier_constant(token_t *token)
+{
+  return make_constant(OBJ_VAL(copy_string(token->start, token->length)));
+}
+
 static obj_function_t *end_compiler()
 {
   emit_return();
@@ -356,6 +361,20 @@ static void call(bool can_assign)
   emit_bytes(OP_CALL, arg_count);
 }
 
+static void dot(bool can_assign)
+{
+  consume(TOKEN_IDENTIFIER, "Expect property name.");
+  uint8_t name = identifier_constant(&g_parser.previous);
+
+  if(can_assign && match(TOKEN_EQUAL)) {
+    expression();
+    emit_bytes(OP_SET_PROPERTY, name);
+  }
+  else {
+    emit_bytes(OP_GET_PROPERTY, name);
+  }
+}
+
 static void literal(bool can_assign)
 {
   switch(g_parser.previous.type) {
@@ -375,11 +394,6 @@ static void number(bool can_assign)
 static void string(bool can_assign)
 {
   emit_constant(OBJ_VAL(copy_string(g_parser.previous.start + 1, g_parser.previous.length - 2)));
-}
-
-static uint8_t identifier_constant(token_t *token)
-{
-  return make_constant(OBJ_VAL(copy_string(token->start, token->length)));
 }
 
 static bool identifier_equal(token_t *a, token_t *b)
@@ -885,7 +899,7 @@ parse_rule_t rules[] = {
   [TOKEN_LEFT_BRACE]    = {NULL,      NULL,   PREC_NONE},
   [TOKEN_RIGHT_BRACE]   = {NULL,      NULL,   PREC_NONE},
   [TOKEN_COMMA]         = {NULL,      NULL,   PREC_NONE},
-  [TOKEN_DOT]           = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_DOT]           = {NULL,      dot,    PREC_CALL},
   [TOKEN_MINUS]         = {unary,     binary, PREC_TERM},
   [TOKEN_PLUS]          = {NULL,      binary, PREC_TERM},
   [TOKEN_SEMICOLON]     = {NULL,      NULL,   PREC_NONE},
