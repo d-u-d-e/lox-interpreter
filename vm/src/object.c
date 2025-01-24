@@ -70,6 +70,13 @@ obj_function_t *new_function()
   return function;
 }
 
+obj_class_t *new_class(obj_string_t *name)
+{
+  obj_class_t *klass = ALLOCATE_OBJ(obj_class_t, OBJ_CLASS);
+  klass->name = name;
+  return klass;
+}
+
 obj_string_t *copy_string(const char *chars, int length)
 {
   uint32_t hash = hash_string(chars, length);
@@ -122,9 +129,13 @@ static void print_function(obj_function_t *function)
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
+  case OBJ_CLASS: {
+    printf("%s", AS_CLASS(value)->name->chars);
+    break;
+  }
+
   case OBJ_STRING: {
-    obj_string_t *str = AS_STRING(value);
-    printf("%s", str->chars);
+    printf("%s", AS_STRING(value)->chars);
     break;
   }
 

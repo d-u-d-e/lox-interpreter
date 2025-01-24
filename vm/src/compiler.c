@@ -796,6 +796,20 @@ static void for_statement()
   end_scope();
 }
 
+static void class_declaration()
+{
+  consume(TOKEN_IDENTIFIER, "Expect class name.");
+  // Add the class name to the sorrounding function's constant table
+  uint8_t name_constant = identifier_constant(&g_parser.previous);
+  declare_variable();
+
+  emit_bytes(OP_CLASS, name_constant);
+  define_variable(name_constant);
+
+  consume(TOKEN_LEFT_BRACE, "Expect '{' before class body.");
+  consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
+}
+
 static void statement()
 {
   if(match(TOKEN_PRINT)) {
@@ -830,6 +844,9 @@ static void declaration()
   }
   else if(match(TOKEN_FUN)) {
     fun_declaration();
+  }
+  else if(match(TOKEN_CLASS)) {
+    class_declaration();
   }
   else {
     statement();

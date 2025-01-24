@@ -499,6 +499,11 @@ static interpret_result_t run()
       push(result);                               // Return value on the stack.
       break;
     }
+
+    case OP_CLASS: {
+      push(OBJ_VAL(new_class(READ_STRING())));
+      break;
+    }
     }
   }
 
