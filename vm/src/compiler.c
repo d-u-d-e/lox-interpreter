@@ -363,7 +363,7 @@ static void call(bool can_assign)
 
 static void dot(bool can_assign)
 {
-  consume(TOKEN_IDENTIFIER, "Expect property name.");
+  consume(TOKEN_IDENTIFIER, "Expect property name after '.'.");
   uint8_t name = identifier_constant(&g_parser.previous);
 
   if(can_assign && match(TOKEN_EQUAL)) {
