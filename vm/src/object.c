@@ -80,10 +80,7 @@ obj_string_t *copy_string(const char *chars, int length)
   }
 
   // Different string must be allocated
-  obj_string_t *res = allocate_string(length);
-  memcpy(res->chars, chars, length);
-  res->chars[length] = '\0';
-  res->hash = hash;
+  obj_string_t *res = allocate_string(chars, length, hash);
   // Intern the string: note that GC can run, so we must make the brand new string reachable by
   // pushing it onto the stack
   push(OBJ_VAL(res));
@@ -92,10 +89,13 @@ obj_string_t *copy_string(const char *chars, int length)
   return res;
 }
 
-obj_string_t *allocate_string(int length)
+obj_string_t *allocate_string(const char *chars, int length, uint32_t hash)
 {
   obj_string_t *res = (obj_string_t *)allocate_obj(sizeof(obj_string_t) + length + 1, OBJ_STRING);
+  memcpy(res->chars, chars, length);
+  res->chars[length] = '\0';
   res->length = length;
+  res->hash = hash;
   return res;
 }
 

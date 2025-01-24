@@ -75,7 +75,7 @@ obj_native_t *new_native(native_fn_t function);
 obj_upvalue_t *new_upvalue(value_t *location);
 obj_closure_t *new_closure(obj_function_t *function);
 obj_function_t *new_function();
-obj_string_t *allocate_string(int length);
+obj_string_t *allocate_string(const char *chars, int length, uint32_t hash);
 uint32_t hash_string(const char *key, int length);
 obj_string_t *copy_string(const char *chars, int length);
 void print_object(value_t value);

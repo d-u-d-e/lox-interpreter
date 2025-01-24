@@ -193,27 +193,32 @@ static bool isFalsey(value_t value)
 
 static void concatenate()
 {
-  obj_string_t *b = AS_STRING(pop());
-  obj_string_t *a = AS_STRING(pop());
+  obj_string_t *b = AS_STRING(peek(0));
+  obj_string_t *a = AS_STRING(peek(1));
   int new_length = a->length + b->length;
+  // NOTE: ALLOCATE can trigger a GC, so operands must be kept on the stack!
+  // That's why we use peek() above.
+  char *chars = ALLOCATE(char, new_length + 1);
+  memcpy(chars, a->chars, a->length);
+  memcpy(&chars[a->length], b->chars, b->length);
+  chars[new_length] = '\0';
+  uint32_t hash = hash_string(chars, new_length);
+  obj_string_t *interned = table_find_string(&g_vm.strings, chars, new_length, hash);
+  // Safe to pop operands
+  pop();
+  pop();
 
-  obj_string_t *res = allocate_string(new_length);
-  memcpy(res->chars, a->chars, a->length);
-  memcpy(&res->chars[a->length], b->chars, b->length);
-  res->chars[new_length] = '\0';
-  res->hash = hash_string(res->chars, new_length);
-
-  obj_string_t *interned = table_find_string(&g_vm.strings, res->chars, new_length, res->hash);
   if(interned != NULL) {
-    // we must keep using the interned string
-    free_object((obj_t *)res);
+    // We must keep using the interned string
     push(OBJ_VAL(interned));
   }
   else {
-    // intern it
-    table_set(&g_vm.strings, res, NIL_VAL);
+    // It's a new string, so intern it
+    obj_string_t *res = allocate_string(chars, new_length, hash);
     push(OBJ_VAL(res));
+    table_set(&g_vm.strings, res, NIL_VAL);
   }
+  FREE(char, chars);
 }
 
 static interpret_result_t run()
