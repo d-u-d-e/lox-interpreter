@@ -177,6 +177,36 @@ static bool call_value(value_t callee, int arg_count)
   return false;
 }
 
+static bool invoke_from_class(obj_class_t *klass, obj_string_t *name, int arg_count)
+{
+  // This combines the logic of OP_GET_PROPERTY and OP_CALL together.
+  value_t method;
+  if(!table_get(&klass->methods, name, &method)) {
+    runtime_error("Undefined property '%s'.", name->chars);
+    return false;
+  }
+  return call(AS_CLOSURE(method), arg_count);
+}
+
+static bool invoke(obj_string_t *name, int arg_count)
+{
+  value_t receiver = peek(arg_count);
+
+  if(!IS_INSTANCE(receiver)) {
+    runtime_error("Only instances have methods.");
+    return false;
+  }
+
+  obj_instance_t *instance = AS_INSTANCE(receiver);
+  // What if the name is a field that is a callable?
+  value_t value;
+  if(table_get(&instance->fields, name, &value)) {
+    g_vm.stack_top[-arg_count - 1] = value; // Replace the receiver with the field value.
+    return call_value(value, arg_count);
+  }
+  return invoke_from_class(instance->klass, name, arg_count);
+}
+
 static bool bind_method(obj_class_t *klass, obj_string_t *name)
 {
   // Places the bound method on the stack if found.
@@ -545,6 +575,18 @@ static interpret_result_t run()
         return INTERPRET_RUNTIME_ERROR;
       }
       // There was a function object on the stack!
+      // We need to update the current frame since run() uses it.
+      frame = &g_vm.frames[g_vm.frame_count - 1];
+      break;
+    }
+
+    case OP_INVOKE: {
+      // Similar to OP_CALL
+      obj_string_t *method_name = READ_STRING();
+      uint8_t arg_count = READ_BYTE();
+      if(!invoke(method_name, arg_count)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
       // We need to update the current frame since run() uses it.
       frame = &g_vm.frames[g_vm.frame_count - 1];
       break;

@@ -389,6 +389,13 @@ static void dot(bool can_assign)
     expression();
     emit_bytes(OP_SET_PROPERTY, name);
   }
+  else if(match(TOKEN_LEFT_PAREN)) {
+    // This is an optimization for method calls. It's pointless to emit OP_GET_PROPERTY followed by
+    // OP_CALL.
+    uint8_t arg_count = argument_list();
+    emit_bytes(OP_INVOKE, name);
+    emit_byte(arg_count);
+  }
   else {
     emit_bytes(OP_GET_PROPERTY, name);
   }
@@ -779,7 +786,7 @@ static void print_statement()
 static void return_statement()
 {
   if(g_current_compiler->type == TYPE_SCRIPT) {
-    error("Can't return from top-level code.") ;
+    error("Can't return from top-level code.");
   }
 
   if(match(TOKEN_SEMICOLON)) {
