@@ -610,7 +610,7 @@ static void this_(bool can_assign)
   instance. We check if we are inside a method. */
 
   if(g_current_class == NULL) {
-    error("Cannot use 'this' outside of a class.");
+    error("Can't use 'this' outside of a class.");
     return;
   }
 
