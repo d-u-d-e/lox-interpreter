@@ -233,9 +233,12 @@ static void mark_roots()
   // Variables allocated by the compiler are also roots
   mark_compiler_roots();
 
-  // Strings are interned by the VM, so we deliberately not consider them to be roots.
-  // But we don't want dangling pointers in the string table!
-  // The right phase to remove them is between the mark and sweep phases
+  /* Strings are interned by the VM, so we deliberately not consider them to be roots.
+  But we don't want dangling pointers in the string table!
+  The right phase to remove them is between the mark and sweep phases */
+
+  // This one is special, it must stick around.
+  mark_object((obj_t *)&g_vm.init_string);
 }
 
 static void trace_references()

@@ -24,6 +24,7 @@ typedef struct {
   value_t *stack_top;
   table_t globals;
   table_t strings; // string interning
+  obj_string_t *init_string;
   obj_t *objects;
   obj_upvalue_t *open_upvalues;
 

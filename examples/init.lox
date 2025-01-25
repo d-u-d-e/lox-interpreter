@@ -18,4 +18,4 @@ class Bar {
 }
 
 var bar = Bar(2);
-print bar.init(2);
+print bar.init(3);

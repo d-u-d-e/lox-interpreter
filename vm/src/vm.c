@@ -73,11 +73,17 @@ void init_vm()
 
   init_table(&g_vm.globals);
   init_table(&g_vm.strings);
+
+  g_vm.init_string = NULL; // Note this: copy_string can cause GC to run and mark `init_string`,
+                           // before it has been initialized
+  g_vm.init_string = copy_string("init", 4); // handy reference to string for class initializers
+
   define_native("clock", clock_native);
 }
 
 void free_vm()
 {
+  g_vm.init_string = NULL;
   free_objects();
   free_table(&g_vm.globals);
   free_table(&g_vm.strings);
@@ -141,7 +147,18 @@ static bool call_value(value_t callee, int arg_count)
     case OBJ_CLASS: {
       // Create a new instance of the class.
       obj_class_t *klass = AS_CLASS(callee);
+      // Replace the class object with the instance object.
       g_vm.stack_top[-arg_count - 1] = OBJ_VAL(new_instance(klass));
+      value_t initializer;
+      // init_string is basically the string "init".
+      if(table_get(&klass->methods, g_vm.init_string, &initializer)) {
+        return call(AS_CLOSURE(initializer), arg_count);
+      }
+      else if(arg_count != 0) {
+        // If the class has no initializer, but the user passed arguments, we throw an error.
+        runtime_error("Expected 0 arguments but got %d.", arg_count);
+        return false;
+      }
       return true;
     }
 
@@ -527,7 +544,7 @@ static interpret_result_t run()
         // No function object on the stack! Exit
         return INTERPRET_RUNTIME_ERROR;
       }
-      // There is a function object on the stack!
+      // There was a function object on the stack!
       // We need to update the current frame since run() uses it.
       frame = &g_vm.frames[g_vm.frame_count - 1];
       break;

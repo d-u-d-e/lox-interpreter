@@ -55,6 +55,7 @@ typedef struct {
 // Is the compiler compiling a function or the top level script?
 typedef enum {
   TYPE_FUNCTION,
+  TYPE_INITIALIZER,
   TYPE_METHOD,
   TYPE_SCRIPT,
 } function_type_t;
@@ -202,9 +203,15 @@ static void emit_loop(int loop_start)
 
 static void emit_return()
 {
-  emit_byte(OP_NIL);
+  if(g_current_compiler->type == TYPE_INITIALIZER) {
+    emit_bytes(OP_GET_LOCAL, 0); // Return `this`
+  }
+  else {
+    emit_byte(OP_NIL);
+  }
   emit_byte(OP_RETURN);
 }
+
 static uint8_t make_constant(value_t value)
 {
   // The constant may be heap-allocated
@@ -247,7 +254,7 @@ static void init_compiler(compiler_t *compiler, function_type_t type)
   local_t *local = &compiler->locals[compiler->local_count++];
   local->depth = 0;
   local->is_captured = false;
-  if(type == TYPE_METHOD) {
+  if(type == TYPE_METHOD || type == TYPE_INITIALIZER) {
     // For methods, stack slot 0 is reserved for `this`
     local->name.start = "this";
     local->name.length = 4;
@@ -721,6 +728,9 @@ static void method()
   // Parse the body
   // This emits the code to create a closure and leave it on top of the stack
   function_type_t type = TYPE_METHOD;
+  if(g_parser.previous.length == 4 && memcmp(g_parser.previous.start, "init", 4) == 0) {
+    type = TYPE_INITIALIZER;
+  }
   function(type);
 
   emit_bytes(OP_METHOD, constant); // This is the name of the method
@@ -769,13 +779,18 @@ static void print_statement()
 static void return_statement()
 {
   if(g_current_compiler->type == TYPE_SCRIPT) {
-    error("Can't return from top-level code.");
+    error("Can't return from top-level code.") ;
   }
 
   if(match(TOKEN_SEMICOLON)) {
     emit_return();
   }
   else {
+    // We cannot return a value from an initializer
+    if(g_current_compiler->type == TYPE_INITIALIZER) {
+      error("Can't return a value from an initializer.");
+    }
+
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after return value.");
     emit_byte(OP_RETURN);
