@@ -55,6 +55,7 @@ typedef struct {
 // Is the compiler compiling a function or the top level script?
 typedef enum {
   TYPE_FUNCTION,
+  TYPE_METHOD,
   TYPE_SCRIPT,
 } function_type_t;
 
@@ -238,14 +239,20 @@ static void init_compiler(compiler_t *compiler, function_type_t type)
     compiler->function->name = copy_string(g_parser.previous.start, g_parser.previous.length);
   }
 
-  // Stack slot 0 is reserved, and no user identifier can refer to it, since its name is the empty
-  // string; it stores the function being called (also works for the top level "function" or script
-  // code)
   local_t *local = &compiler->locals[compiler->local_count++];
   local->depth = 0;
   local->is_captured = false;
-  local->name.start = "";
-  local->name.length = 0;
+  if(type != TYPE_FUNCTION) {
+    // For methods, stack slot 0 is reserved for `this`
+    local->name.start = "this";
+    local->name.length = 4;
+  }
+  else {
+    // For functions, stack slot 0 is reserved for the function itself (closure), and no user
+    // identifier can refer to it, since its name is the empty string
+    local->name.start = "";
+    local->name.length = 0;
+  }
 }
 
 static uint8_t identifier_constant(token_t *token)
@@ -584,6 +591,14 @@ static void named_variable(token_t token, bool can_assign)
 
 static void variable(bool can_assign) { named_variable(g_parser.previous, can_assign); }
 
+static void this_(bool can_assign)
+{
+  // 'this' is compiled as a local variable
+  // This is nice, because closures inside methods that reference 'this' will correctly capture the
+  // instance
+  variable(false);
+}
+
 static void var_declaration()
 {
   uint8_t global = parse_variable("Expect variable name.");
@@ -694,7 +709,7 @@ static void method()
 
   // Parse the body
   // This emits the code to create a closure and leave it on top of the stack
-  function_type_t type = TYPE_FUNCTION;
+  function_type_t type = TYPE_METHOD;
   function(type);
 
   emit_bytes(OP_METHOD, constant); // This is the name of the method
@@ -956,7 +971,7 @@ parse_rule_t rules[] = {
   [TOKEN_PRINT]         = {NULL,      NULL,   PREC_NONE},
   [TOKEN_RETURN]        = {NULL,      NULL,   PREC_NONE},
   [TOKEN_SUPER]         = {NULL,      NULL,   PREC_NONE},
-  [TOKEN_THIS]          = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_THIS]          = {this_,     NULL,   PREC_NONE},
   [TOKEN_TRUE]          = {literal,   NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,      NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,      NULL,   PREC_NONE},

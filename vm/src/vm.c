@@ -115,7 +115,8 @@ static bool call(obj_closure_t *closure, int arg_count)
   frame->closure = closure;
   frame->ip = closure->function->chunk.code;
   // The -1 accounts for the fact that locals (the actual parameters) start at 1.
-  // The first slot is reserved for methods...
+  // For methods, the first slot is reserved for `this`. For functions, it simply holds the closure
+  // itself.
   frame->slots = g_vm.stack_top - arg_count - 1;
   return true;
 }
@@ -146,6 +147,9 @@ static bool call_value(value_t callee, int arg_count)
 
     case OBJ_BOUND_METHOD: {
       obj_bound_method_t *bound = AS_BOUND_METHOD(callee);
+      // We need to place the receiver on the stack for the call to work.
+      // We replace the current bound method object with the receiver.
+      g_vm.stack_top[-arg_count - 1] = bound->receiver;
       return call(bound->method, arg_count);
     }
 
