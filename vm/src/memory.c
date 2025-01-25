@@ -75,6 +75,11 @@ void free_object(obj_t *object)
     break;
   }
 
+  case OBJ_BOUND_METHOD: {
+    FREE(obj_bound_method_t, object);
+    break;
+  }
+
   case OBJ_CLASS: {
     obj_class_t *klass = (obj_class_t *)object;
     free_table(&klass->methods);
@@ -154,6 +159,15 @@ static void blacken_object(obj_t *object)
 #endif
 
   switch(object->type) {
+  case OBJ_BOUND_METHOD: {
+    obj_bound_method_t *bound_method = (obj_bound_method_t *)object;
+    // Tracing the closure is not really necessary, because the receiver is an object instance with
+    // a pointer to the class containing a table to all the methods (closures)
+    mark_value(bound_method->receiver);
+    mark_object((obj_t *)bound_method->method);
+    break;
+  }
+
   case OBJ_CLASS: {
     obj_class_t *klass = (obj_class_t *)object;
     mark_object((obj_t *)klass->name);

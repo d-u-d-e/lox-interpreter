@@ -144,11 +144,33 @@ static bool call_value(value_t callee, int arg_count)
       return true;
     }
 
+    case OBJ_BOUND_METHOD: {
+      obj_bound_method_t *bound = AS_BOUND_METHOD(callee);
+      return call(bound->method, arg_count);
+    }
+
     default: break; // non callable object type
     }
   }
   runtime_error("Can only call functions and classes.");
   return false;
+}
+
+static bool bind_method(obj_class_t *klass, obj_string_t *name)
+{
+  // Places the bound method on the stack if found.
+  value_t method;
+
+  if(!table_get(&klass->methods, name, &method)) {
+    runtime_error("Undefined property '%s'.", name->chars);
+    return false;
+  }
+
+  // Wrap the class method in a bound method
+  obj_bound_method_t *bound = new_bound_method(peek(0), AS_CLOSURE(method));
+  pop(); // Instance
+  push(OBJ_VAL(bound));
+  return true;
 }
 
 static obj_upvalue_t *capture_upvalue(value_t *local)
@@ -382,9 +404,11 @@ static interpret_result_t run()
         push(value);
         break;
       }
-
-      runtime_error("Undefined property '%s'.", name->chars);
-      return INTERPRET_RUNTIME_ERROR;
+      // Fields shadow methods
+      if(!bind_method(instance->klass, name)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      break;
     }
 
     case OP_SET_PROPERTY: {

@@ -25,6 +25,14 @@ static obj_t *allocate_obj(size_t size, obj_type_t type)
   return object;
 }
 
+obj_bound_method_t *new_bound_method(value_t receiver, obj_closure_t *method)
+{
+  obj_bound_method_t *bound_method = ALLOCATE_OBJ(obj_bound_method_t, OBJ_BOUND_METHOD);
+  bound_method->receiver = receiver;
+  bound_method->method = method;
+  return bound_method;
+}
+
 obj_native_t *new_native(native_fn_t function)
 {
   obj_native_t *native = ALLOCATE_OBJ(obj_native_t, OBJ_NATIVE);
@@ -138,6 +146,11 @@ static void print_function(obj_function_t *function)
 void print_object(value_t value)
 {
   switch(OBJ_TYPE(value)) {
+  case OBJ_BOUND_METHOD: {
+    print_function(AS_BOUND_METHOD(value)->method->function);
+    break;
+  }
+
   case OBJ_INSTANCE: {
     printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
     break;
