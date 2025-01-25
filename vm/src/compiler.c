@@ -76,8 +76,13 @@ typedef struct compiler_t {
                    // scope
 } compiler_t;
 
+typedef struct class_compiler {
+  struct class_compiler *enclosing;
+} class_compiler_t;
+
 parser_t g_parser;
 compiler_t *g_current_compiler = NULL;
+class_compiler_t *g_current_class = NULL; // Innermost class being compiled
 
 static parse_rule_t *get_rule(token_type_t type);
 static void statement();
@@ -242,7 +247,7 @@ static void init_compiler(compiler_t *compiler, function_type_t type)
   local_t *local = &compiler->locals[compiler->local_count++];
   local->depth = 0;
   local->is_captured = false;
-  if(type != TYPE_FUNCTION) {
+  if(type == TYPE_METHOD) {
     // For methods, stack slot 0 is reserved for `this`
     local->name.start = "this";
     local->name.length = 4;
@@ -593,9 +598,15 @@ static void variable(bool can_assign) { named_variable(g_parser.previous, can_as
 
 static void this_(bool can_assign)
 {
-  // `this` is compiled as a local variable
-  // This is nice, because closures inside methods that reference `this` will correctly capture the
-  // instance
+  /* `this` is compiled as a local variable
+  This is nice, because closures inside methods that reference `this` will correctly capture the
+  instance. We check if we are inside a method. */
+
+  if(g_current_class == NULL) {
+    error("Cannot use 'this' outside of a class.");
+    return;
+  }
+
   variable(false);
 }
 
@@ -852,9 +863,15 @@ static void class_declaration()
   emit_bytes(OP_CLASS, name_constant);
   define_variable(name_constant);
 
-  // named_variable will generate code to load a variable with the given name on the stack!
-  // This means that when we execute OP_METHOD, the stack has the method's closure on top, with
-  // the class right under! The VM cannot assume that the class is global!
+  // Track nested classes
+  class_compiler_t class_compiler;
+  class_compiler.enclosing = g_current_class;
+  g_current_class = &class_compiler;
+
+  /* named_variable will generate code to load a variable with the given name on the stack!
+  This means that when we execute OP_METHOD, the stack has the method's closure on top, with
+  the class right under! The VM cannot assume that the class is global, as Lox support nested
+  classes. */
   named_variable(class_name, false);
 
   // Parse body of class
@@ -865,6 +882,9 @@ static void class_declaration()
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   // We no longer need the class object on the stack once methods have been interpreted
   emit_byte(OP_POP);
+
+  // Restore enclosing class
+  g_current_class = class_compiler.enclosing;
 }
 
 static void statement()
