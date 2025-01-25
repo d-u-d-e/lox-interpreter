@@ -543,7 +543,7 @@ static interpret_result_t run()
       for(int i = 0; i < closure->upvalue_count; i++) {
         uint8_t is_local = READ_BYTE();
         uint8_t index = READ_BYTE();
-        // 'frame' refers to the current enclosing function
+        // `frame` refers to the current enclosing function
         if(is_local) {
           closure->upvalues[i] = capture_upvalue(frame->slots + index);
         }

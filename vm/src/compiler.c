@@ -593,8 +593,8 @@ static void variable(bool can_assign) { named_variable(g_parser.previous, can_as
 
 static void this_(bool can_assign)
 {
-  // 'this' is compiled as a local variable
-  // This is nice, because closures inside methods that reference 'this' will correctly capture the
+  // `this` is compiled as a local variable
+  // This is nice, because closures inside methods that reference `this` will correctly capture the
   // instance
   variable(false);
 }
