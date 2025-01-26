@@ -507,13 +507,13 @@ static interpret_result_t run()
     }
 
     case OP_ADD: {
-      if(IS_STRING(peek(0)) && IS_STRING(peek(1))) {
-        concatenate();
-      }
-      else if(IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+      if(IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
         double b = AS_NUMBER(pop());
         double a = AS_NUMBER(pop());
         push(NUMBER_VAL(a + b));
+      }
+      else if(IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+        concatenate();
       }
       else {
         runtime_error("Operands must be two numbers or two strings.");
