@@ -79,6 +79,7 @@ typedef struct compiler_t {
 
 typedef struct class_compiler {
   struct class_compiler *enclosing;
+  bool has_superclass;
 } class_compiler_t;
 
 parser_t g_parser;
@@ -610,6 +611,34 @@ static void named_variable(token_t token, bool can_assign)
 
 static void variable(bool can_assign) { named_variable(g_parser.previous, can_assign); }
 
+static token_t synthetic_token(const char *text)
+{
+  token_t token;
+  token.start = text;
+  token.length = (int)strlen(text);
+  return token;
+}
+
+static void super_(bool can_assign)
+{
+  if(g_current_class == NULL) {
+    error("Can't use 'super' outside of a class.");
+  }
+  else if(!g_current_class->has_superclass) {
+    error("Can't use 'super' in a class with no superclass.");
+  }
+
+  consume(TOKEN_DOT, "Expect '.' after 'super'.");
+  consume(TOKEN_IDENTIFIER, "Expect superclass method name.");
+  uint8_t name = identifier_constant(&g_parser.previous);
+
+  // In order to access a superclass method on the current instance,
+  // the runtime needs both the receiver and the superclass.
+  named_variable(synthetic_token("this"), false);
+  named_variable(synthetic_token("super"), false);
+  emit_bytes(OP_GET_SUPER, name);
+}
+
 static void this_(bool can_assign)
 {
   /* `this` is compiled as a local variable
@@ -888,7 +917,28 @@ static void class_declaration()
   // Track nested classes
   class_compiler_t class_compiler;
   class_compiler.enclosing = g_current_class;
+  class_compiler.has_superclass = false;
   g_current_class = &class_compiler;
+
+  if(match(TOKEN_LESS)) {
+    // Parse superclass
+    consume(TOKEN_IDENTIFIER, "Expect superclass name.");
+    variable(false); // Emit code to push the superclass on the stack
+
+    if(identifier_equal(&class_name, &g_parser.previous)) {
+      error("A class can't inherit from itself.");
+    }
+
+    // Adding a new scope ensures that multiple classes declared in the same scope have their own
+    // `super` reference.
+    begin_scope();
+    add_local(synthetic_token("super"));
+    define_variable(0);
+
+    named_variable(class_name, false); // Emit code to push this subclass on the stack
+    emit_byte(OP_INHERIT); // At runtime, methods of the superclass will be copied into subclass.
+    class_compiler.has_superclass = true;
+  }
 
   /* named_variable will generate code to load a variable with the given name on the stack!
   This means that when we execute OP_METHOD, the stack has the method's closure on top, with
@@ -904,6 +954,11 @@ static void class_declaration()
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after class body.");
   // We no longer need the class object on the stack once methods have been interpreted
   emit_byte(OP_POP);
+
+  if(class_compiler.has_superclass) {
+    // Will pop the superclass from the stack
+    end_scope();
+  }
 
   // Restore enclosing class
   g_current_class = class_compiler.enclosing;
@@ -1012,7 +1067,7 @@ parse_rule_t rules[] = {
   [TOKEN_OR]            = {NULL,      or_,    PREC_OR},
   [TOKEN_PRINT]         = {NULL,      NULL,   PREC_NONE},
   [TOKEN_RETURN]        = {NULL,      NULL,   PREC_NONE},
-  [TOKEN_SUPER]         = {NULL,      NULL,   PREC_NONE},
+  [TOKEN_SUPER]         = {super_,    NULL,   PREC_NONE},
   [TOKEN_THIS]          = {this_,     NULL,   PREC_NONE},
   [TOKEN_TRUE]          = {literal,   NULL,   PREC_NONE},
   [TOKEN_VAR]           = {NULL,      NULL,   PREC_NONE},

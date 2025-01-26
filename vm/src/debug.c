@@ -112,6 +112,10 @@ int disassemble_instruction(chunk_t *chunk, int offset)
     return constant_instruction("OP_GET_PROPERTY", chunk, offset);
   }
 
+  case OP_GET_SUPER: {
+    return constant_instruction("OP_GET_SUPER", chunk, offset);
+  }
+
   case OP_EQUAL: {
     return simple_instruction("OP_EQUAL", offset);
   }
@@ -191,6 +195,10 @@ int disassemble_instruction(chunk_t *chunk, int offset)
 
   case OP_CLASS: {
     return constant_instruction("OP_CLASS", chunk, offset);
+  }
+
+  case OP_INHERIT: {
+    return simple_instruction("OP_INHERIT", offset);
   }
 
   case OP_METHOD: {

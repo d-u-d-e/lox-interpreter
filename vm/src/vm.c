@@ -484,6 +484,18 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_GET_SUPER: {
+      obj_string_t *name = READ_STRING();
+      obj_class_t *superclass = AS_CLASS(pop());
+      // Now we have the instance on the stack.
+
+      if(!bind_method(superclass, name)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      // Now we have the bound method on the stack.
+      break;
+    }
+
     case OP_GREATER: {
       BINARY_OP(BOOL_VAL, >);
       break;
@@ -642,6 +654,24 @@ static interpret_result_t run()
 
     case OP_CLASS: {
       push(OBJ_VAL(new_class(READ_STRING())));
+      break;
+    }
+
+    case OP_INHERIT: {
+      value_t superclass = peek(1);
+
+      if(!IS_CLASS(superclass)) {
+        runtime_error("Superclass must be a class.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+
+      obj_class_t *subclass = AS_CLASS(peek(0));
+      /* Inherited methods calls are fast as normal method calls!
+      Also note that this instruction is emitted before any OP_METHOD instructions, meaning that
+      it won't overwrite subclass methods. That at most happens while parsing the methods. */
+      table_add_all(&AS_CLASS(superclass)->methods, &subclass->methods);
+      pop(); // Subclass
+      // Superclass is popped after parsing the methods..
       break;
     }
 
