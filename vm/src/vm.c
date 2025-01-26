@@ -604,6 +604,18 @@ static interpret_result_t run()
       break;
     }
 
+    case OP_SUPER_INVOKE: {
+      obj_string_t *method_name = READ_STRING();
+      uint8_t arg_count = READ_BYTE();
+      obj_class_t *superclass = AS_CLASS(pop());
+      if(!invoke_from_class(superclass, method_name, arg_count)) {
+        return INTERPRET_RUNTIME_ERROR;
+      }
+      // We need to update the current frame since run() uses it.
+      frame = &g_vm.frames[g_vm.frame_count - 1];
+      break;
+    }
+
     case OP_CLOSURE: {
       obj_function_t *function = AS_FUNCTION(READ_CONSTANT());
       // Note that we wrap the compiled function into a closure object.

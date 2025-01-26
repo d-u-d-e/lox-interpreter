@@ -635,8 +635,19 @@ static void super_(bool can_assign)
   // In order to access a superclass method on the current instance,
   // the runtime needs both the receiver and the superclass.
   named_variable(synthetic_token("this"), false);
-  named_variable(synthetic_token("super"), false);
-  emit_bytes(OP_GET_SUPER, name);
+
+  if(match(TOKEN_LEFT_PAREN)) {
+    // This is an optimization for super calls. Usually it's pointless to emit OP_GET_SUPER followed
+    // by OP_CALL
+    uint8_t arg_count = argument_list();
+    named_variable(synthetic_token("super"), false);
+    emit_bytes(OP_SUPER_INVOKE, name);
+    emit_byte(arg_count);
+  }
+  else {
+    named_variable(synthetic_token("super"), false);
+    emit_bytes(OP_GET_SUPER, name);
+  }
 }
 
 static void this_(bool can_assign)
